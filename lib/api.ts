@@ -35,7 +35,7 @@ async function request<T>(
   const response = await fetch(`${BASE_URL}${path}`, {
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
       ...authHeaders(),
       ...(options.headers as Record<string, string>),
     },
