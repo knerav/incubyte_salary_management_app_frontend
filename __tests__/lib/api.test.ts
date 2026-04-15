@@ -1,4 +1,6 @@
-import * as authModule from "@/lib/auth";
+jest.mock("@/lib/auth");
+
+import { getToken, setToken, clearToken } from "@/lib/auth";
 import {
   signIn,
   signOut,
@@ -37,11 +39,15 @@ const mockEmployee = {
   hired_on: "2022-01-01",
 };
 
+const mockGetToken = getToken as jest.MockedFunction<typeof getToken>;
+const mockSetToken = setToken as jest.MockedFunction<typeof setToken>;
+const mockClearToken = clearToken as jest.MockedFunction<typeof clearToken>;
+
 beforeEach(() => {
   jest.clearAllMocks();
-  jest.spyOn(authModule, "getToken").mockReturnValue("mock.jwt.token");
-  jest.spyOn(authModule, "setToken").mockImplementation(() => {});
-  jest.spyOn(authModule, "clearToken").mockImplementation(() => {});
+  mockGetToken.mockReturnValue("Bearer mock.jwt.token");
+  mockSetToken.mockImplementation(() => {});
+  mockClearToken.mockImplementation(() => {});
 });
 
 function mockFetch(status: number, body: unknown, headers?: Record<string, string>) {
@@ -71,7 +77,7 @@ describe("signIn", () => {
   it("stores the token returned in the Authorization response header", async () => {
     mockFetch(200, {}, { Authorization: "Bearer new.token" });
     await signIn("hr@example.com", "Password1!");
-    expect(authModule.setToken).toHaveBeenCalledWith("Bearer new.token");
+    expect(mockSetToken).toHaveBeenCalledWith("Bearer new.token");
   });
 
   it("throws when credentials are invalid", async () => {
@@ -96,7 +102,7 @@ describe("signOut", () => {
   it("clears the stored token after sign-out", async () => {
     mockFetch(200, { message: "Signed out successfully." });
     await signOut();
-    expect(authModule.clearToken).toHaveBeenCalled();
+    expect(mockClearToken).toHaveBeenCalled();
   });
 });
 
@@ -124,7 +130,7 @@ describe("listEmployees", () => {
   it("clears the token and throws on a 401 response", async () => {
     mockFetch(401, { error: "Unauthorized" });
     await expect(listEmployees({})).rejects.toThrow();
-    expect(authModule.clearToken).toHaveBeenCalled();
+    expect(mockClearToken).toHaveBeenCalled();
   });
 });
 
