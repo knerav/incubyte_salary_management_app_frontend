@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hello, team Incubyte! 👋
 
-## Getting Started
+This is a collection of documents that walk you through how I approached the salary management tool assignment. From my understanding of the requirements, all the way to how I implemented the code. Each document builds on the previous one, so I'd recommend reading them in the order listed below.
 
-First, run the development server:
+I use Alacritty as my terminal of choice and tmux to run multiple sessions and split panes. I have Claude Code open in a split pane to the left of my screen, and to the right I usually have the application server running.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Reading order
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 1. [Event Storm](1_EVENT_STORM.md)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Before touching any specs or schemas, I ran an event storm to identify the domain's natural boundaries, and surface any edge cases early. This process has always helped me translate business requirements to events and actions.
 
-## Learn More
+### 2. [Data Model](2_DATA_MODEL.md)
 
-To learn more about Next.js, take a look at the following resources:
+The schema follows directly from the event storm. This document covers the required tables and indexes, and the reasoning behind a handful of non-obvious field choices.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 3. [API Contract](3_API_CONTRACT.md)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+With the data model settled, this defines the JSON interface between the Rails backend and the Next.js frontend.
 
-## Deploy on Vercel
+### 4. [Architecture Decisions](4_ARCHITECTURE_DECISIONS.md)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+A record of the non-obvious decisions I made across the design. For example, why PostgreSQL over SQLite, why a dedicated salary endpoint, why flat JSON over JSON:API, and so on. For the scope of this assignment this allowed me to think out loud and convey my decisions with you.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 5. [Project Structure](5_PROJECT_STRUCTURE.md)
+
+How the Rails monolith and the Next.js frontend are organised. Including the reasoning behind structural choices like service objects, PORO serializers, and choice of tests.
+
+### 6. [Testing Strategy](6_TESTING_STRATEGY.md)
+
+How I approach testing this system: what gets tested, at which layer, and why. Covers the choice of Minitest and fixtures, and what I consider a meaningful suite of tests for this codebase.
+
+---
+
+I've tried my best to make the commit history in each repo reflect the incremental development approach I adopted in these documents.
