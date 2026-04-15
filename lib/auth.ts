@@ -1,0 +1,19 @@
+const TOKEN_KEY = "auth_token";
+
+export function getToken(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setToken(token: string): void {
+  localStorage.setItem(TOKEN_KEY, token);
+  document.cookie = `${TOKEN_KEY}=${token}; path=/; SameSite=Lax`;
+}
+
+export function clearToken(): void {
+  localStorage.removeItem(TOKEN_KEY);
+  document.cookie = `${TOKEN_KEY}=; path=/; max-age=0`;
+}
