@@ -6,6 +6,7 @@ import type { Employee } from "@/types";
 jest.mock("@/lib/api", () => ({
   getEmployee: jest.fn(),
   deleteEmployee: jest.fn(),
+  updateSalary: jest.fn(),
 }));
 
 jest.mock("next/navigation", () => ({
@@ -15,10 +16,11 @@ jest.mock("next/navigation", () => ({
 
 const mockPush = jest.fn();
 
-import { getEmployee, deleteEmployee } from "@/lib/api";
+import { getEmployee, deleteEmployee, updateSalary } from "@/lib/api";
 
 const mockGetEmployee = getEmployee as jest.MockedFunction<typeof getEmployee>;
 const mockDeleteEmployee = deleteEmployee as jest.MockedFunction<typeof deleteEmployee>;
+const mockUpdateSalary = updateSalary as jest.MockedFunction<typeof updateSalary>;
 
 const mockEmployee: Employee = {
   id: 1,
@@ -63,6 +65,30 @@ describe("EmployeePage", () => {
     expect(
       await screen.findByRole("link", { name: /edit/i })
     ).toHaveAttribute("href", "/employees/1/edit");
+  });
+
+  it("renders a salary update form pre-filled with the current salary", async () => {
+    render(<EmployeePage />);
+    expect(await screen.findByLabelText(/salary/i)).toHaveValue("90000.00");
+    expect(screen.getByLabelText(/currency/i)).toHaveValue("USD");
+  });
+
+  it("calls updateSalary with the new values when the salary form is submitted", async () => {
+    mockUpdateSalary.mockResolvedValue({ ...mockEmployee, salary: "95000.00" });
+    render(<EmployeePage />);
+    await screen.findByLabelText(/salary/i);
+
+    const salaryInput = screen.getByLabelText(/salary/i);
+    await userEvent.clear(salaryInput);
+    await userEvent.type(salaryInput, "95000.00");
+    await userEvent.click(screen.getByRole("button", { name: /update salary/i }));
+
+    await waitFor(() => {
+      expect(mockUpdateSalary).toHaveBeenCalledWith(1, {
+        salary: "95000.00",
+        currency: "USD",
+      });
+    });
   });
 
   it("calls deleteEmployee and redirects to /employees after deletion", async () => {
