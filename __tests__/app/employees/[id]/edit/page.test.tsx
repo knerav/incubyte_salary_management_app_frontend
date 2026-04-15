@@ -12,6 +12,7 @@ jest.mock("@/lib/api", () => ({
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
+  useParams: () => ({ id: "1" }),
 }));
 
 const mockPush = jest.fn();
@@ -49,12 +50,12 @@ beforeEach(() => {
 
 describe("EditEmployeePage", () => {
   it("renders a heading for edit employee", async () => {
-    render(<EditEmployeePage params={Promise.resolve({ id: "1" })} />);
+    render(<EditEmployeePage />);
     expect(await screen.findByRole("heading", { name: /edit employee/i })).toBeInTheDocument();
   });
 
   it("pre-fills the form with the employee's current data", async () => {
-    render(<EditEmployeePage params={Promise.resolve({ id: "1" })} />);
+    render(<EditEmployeePage />);
     expect(await screen.findByLabelText(/first name/i)).toHaveValue("Jane");
     expect(screen.getByLabelText(/last name/i)).toHaveValue("Smith");
     expect(screen.getByLabelText(/email/i)).toHaveValue("jane@example.com");
@@ -62,7 +63,7 @@ describe("EditEmployeePage", () => {
 
   it("calls updateEmployee on submit and redirects to the employee profile", async () => {
     mockUpdateEmployee.mockResolvedValue({ ...mockEmployee, first_name: "Janet" });
-    render(<EditEmployeePage params={Promise.resolve({ id: "1" })} />);
+    render(<EditEmployeePage />);
     await screen.findByLabelText(/first name/i);
 
     const firstNameInput = screen.getByLabelText(/first name/i);

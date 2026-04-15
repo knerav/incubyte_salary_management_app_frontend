@@ -10,6 +10,7 @@ jest.mock("@/lib/api", () => ({
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
+  useParams: () => ({ id: "1" }),
 }));
 
 const mockPush = jest.fn();
@@ -40,25 +41,25 @@ beforeEach(() => {
 
 describe("EmployeePage", () => {
   it("shows the employee's full name as a heading", async () => {
-    render(<EmployeePage params={Promise.resolve({ id: "1" })} />);
+    render(<EmployeePage />);
     expect(await screen.findByRole("heading", { name: /jane smith/i })).toBeInTheDocument();
   });
 
   it("shows the employee's email, job title, and department", async () => {
-    render(<EmployeePage params={Promise.resolve({ id: "1" })} />);
+    render(<EmployeePage />);
     await screen.findByText(/jane@example.com/i);
-    expect(screen.getByText(/engineer/i)).toBeInTheDocument();
-    expect(screen.getByText(/engineering/i)).toBeInTheDocument();
+    expect(screen.getByText("Engineer")).toBeInTheDocument();
+    expect(screen.getByText("Engineering")).toBeInTheDocument();
   });
 
   it("shows the employee's salary and currency", async () => {
-    render(<EmployeePage params={Promise.resolve({ id: "1" })} />);
+    render(<EmployeePage />);
     expect(await screen.findByText(/90000/)).toBeInTheDocument();
     expect(screen.getByText(/USD/)).toBeInTheDocument();
   });
 
   it("renders a link to edit the employee", async () => {
-    render(<EmployeePage params={Promise.resolve({ id: "1" })} />);
+    render(<EmployeePage />);
     expect(
       await screen.findByRole("link", { name: /edit/i })
     ).toHaveAttribute("href", "/employees/1/edit");
@@ -66,7 +67,7 @@ describe("EmployeePage", () => {
 
   it("calls deleteEmployee and redirects to /employees after deletion", async () => {
     mockDeleteEmployee.mockResolvedValue(undefined);
-    render(<EmployeePage params={Promise.resolve({ id: "1" })} />);
+    render(<EmployeePage />);
     await screen.findByRole("heading", { name: /jane smith/i });
 
     await userEvent.click(screen.getByRole("button", { name: /delete/i }));
