@@ -91,7 +91,7 @@ salary-management-frontend-app/
 ├── types/
 │   └── index.ts                      ← Shared TypeScript types (Employee, SalaryInsights, etc.)
 │
-├── middleware.ts                      ← Redirects unauthenticated requests to /sign-in
+├── proxy.ts                      ← Redirects unauthenticated requests to /sign-in
 │
 ├── __tests__/
 │   ├── lib/
@@ -141,6 +141,6 @@ All fetch calls go through `lib/api.ts`. The base URL, `Authorization` header in
 
 ### Middleware-based route protection
 
-`middleware.ts` checks for the presence of an `auth_token` cookie on every request to a protected route (anything except `/sign-in`). If absent, it redirects to `/sign-in`. Client-side, `AuthContext` also guards against stale renders if the token is missing from `localStorage`.
+`proxy.ts` checks for the presence of an `auth_token` cookie on every request to a protected route (anything except `/sign-in`). If absent, it redirects to `/sign-in`. Client-side, `AuthContext` also guards against stale renders if the token is missing from `localStorage`.
 
-> **Note on token storage:** The JWT is stored in `localStorage` and mirrored to a cookie solely so that `middleware.ts` can read it server-side for redirect protection. The cookie is not httpOnly — the security model here is appropriate for an internal HR tool on a trusted network, and trades simplicity for the marginally stronger XSS protection that httpOnly would provide.
+> **Note on token storage:** The JWT is stored in `localStorage` and mirrored to a cookie solely so that `proxy.ts` can read it server-side for redirect protection. The cookie is not httpOnly — the security model here is appropriate for an internal HR tool on a trusted network, and trades simplicity for the marginally stronger XSS protection that httpOnly would provide.
