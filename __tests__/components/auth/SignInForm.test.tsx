@@ -79,6 +79,6 @@ describe("SignInForm", () => {
     await userEvent.type(screen.getByLabelText(/password/i), "Password1!");
     await userEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
-    expect(screen.getByRole("button", { name: /sign in/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /signing in/i })).toBeDisabled();
   });
 });
