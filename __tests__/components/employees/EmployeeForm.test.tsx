@@ -1,0 +1,149 @@
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import EmployeeForm from "@/components/employees/EmployeeForm";
+import type { Department, Employee, JobTitle } from "@/types";
+
+const mockOnSubmit = jest.fn();
+
+const mockJobTitles: JobTitle[] = [
+  { id: 1, name: "Engineer" },
+  { id: 2, name: "Designer" },
+];
+
+const mockDepartments: Department[] = [
+  { id: 1, name: "Engineering" },
+  { id: 2, name: "Design" },
+];
+
+const mockEmployee: Employee = {
+  id: 1,
+  first_name: "Jane",
+  last_name: "Smith",
+  email: "jane@example.com",
+  job_title: "Engineer",
+  department: "Engineering",
+  country: "US",
+  salary: "90000.00",
+  currency: "USD",
+  employment_type: "full_time",
+  hired_on: "2022-01-01",
+};
+
+function renderForm(overrides = {}) {
+  return render(
+    <EmployeeForm
+      jobTitles={mockJobTitles}
+      departments={mockDepartments}
+      onSubmit={mockOnSubmit}
+      {...overrides}
+    />
+  );
+}
+
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
+describe("EmployeeForm", () => {
+  it("renders first name and last name fields", () => {
+    renderForm();
+    expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/last name/i)).toBeInTheDocument();
+  });
+
+  it("renders an email field", () => {
+    renderForm();
+    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+  });
+
+  it("renders a job title select with the provided options", () => {
+    renderForm();
+    const select = screen.getByRole("combobox", { name: /job title/i });
+    expect(select).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Engineer" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Designer" })).toBeInTheDocument();
+  });
+
+  it("renders a department select with the provided options", () => {
+    renderForm();
+    const select = screen.getByRole("combobox", { name: /department/i });
+    expect(select).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Engineering" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Design" })).toBeInTheDocument();
+  });
+
+  it("renders country, salary, currency, employment type, and hired on fields", () => {
+    renderForm();
+    expect(screen.getByLabelText(/country/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/salary/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/currency/i)).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: /employment type/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/hired on/i)).toBeInTheDocument();
+  });
+
+  it("renders a submit button", () => {
+    renderForm();
+    expect(screen.getByRole("button", { name: /save/i })).toBeInTheDocument();
+  });
+
+  it("pre-fills the form when an employee is provided (edit mode)", () => {
+    renderForm({ employee: mockEmployee });
+    expect(screen.getByLabelText(/first name/i)).toHaveValue("Jane");
+    expect(screen.getByLabelText(/last name/i)).toHaveValue("Smith");
+    expect(screen.getByLabelText(/email/i)).toHaveValue("jane@example.com");
+    expect(screen.getByLabelText(/country/i)).toHaveValue("US");
+  });
+
+  it("calls onSubmit with form data when submitted", async () => {
+    mockOnSubmit.mockResolvedValue(undefined);
+    renderForm();
+
+    await userEvent.type(screen.getByLabelText(/first name/i), "Alice");
+    await userEvent.type(screen.getByLabelText(/last name/i), "Brown");
+    await userEvent.type(screen.getByLabelText(/email/i), "alice@example.com");
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: /job title/i }), "1");
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: /department/i }), "1");
+    await userEvent.type(screen.getByLabelText(/country/i), "US");
+    await userEvent.type(screen.getByLabelText(/salary/i), "80000");
+    await userEvent.type(screen.getByLabelText(/currency/i), "USD");
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: /employment type/i }),
+      "full_time"
+    );
+    await userEvent.type(screen.getByLabelText(/hired on/i), "2023-01-01");
+    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+
+    expect(mockOnSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        first_name: "Alice",
+        last_name: "Brown",
+        email: "alice@example.com",
+        job_title_id: 1,
+        department_id: 1,
+        employment_type: "full_time",
+      })
+    );
+  });
+
+  it("shows validation errors when onSubmit rejects with errors", async () => {
+    mockOnSubmit.mockRejectedValue({
+      errors: { email: ["has already been taken"] },
+    });
+    renderForm();
+
+    await userEvent.type(screen.getByLabelText(/first name/i), "Alice");
+    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+
+    expect(await screen.findByText(/has already been taken/i)).toBeInTheDocument();
+  });
+
+  it("disables the submit button while submitting", async () => {
+    mockOnSubmit.mockImplementation(() => new Promise(() => {})); // never resolves
+    renderForm();
+
+    await userEvent.type(screen.getByLabelText(/first name/i), "Alice");
+    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+
+    expect(screen.getByRole("button", { name: /saving/i })).toBeDisabled();
+  });
+});
