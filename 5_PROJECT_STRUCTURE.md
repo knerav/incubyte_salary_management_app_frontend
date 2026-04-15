@@ -44,38 +44,33 @@ incubyte-salary-management/
 salary-management-frontend-app/
 ├── app/                              ← Next.js App Router
 │   ├── layout.tsx                    ← Root layout: wraps app in AuthProvider, renders Navbar
-│   ├── page.tsx                      ← Redirects to /employees (or /sign-in if unauthenticated)
+│   ├── page.tsx                      ← Redirects to /employees via useRouter().replace
 │   ├── sign-in/
 │   │   └── page.tsx                  ← Sign-in form
 │   ├── employees/
-│   │   ├── page.tsx                  ← Employee list: search, filters, paginated table
+│   │   ├── page.tsx                  ← Employee list: filter bar, table, two-step delete
 │   │   ├── new/
 │   │   │   └── page.tsx              ← Add employee form
 │   │   └── [id]/
 │   │       ├── page.tsx              ← Employee profile: details + salary update form
 │   │       └── edit/
-│   │           └── page.tsx          ← Edit employee form (general fields only)
+│   │           └── page.tsx          ← Edit employee form (general fields, no salary)
 │   ├── insights/
 │   │   └── page.tsx                  ← Salary insights: filter bar, stats panel, history chart
 │   └── settings/
-│       ├── page.tsx                  ← Settings hub: cards linking to Job Titles and Departments
-│       ├── job-titles/
-│       │   └── page.tsx              ← Job title CRUD
-│       └── departments/
-│           └── page.tsx              ← Department CRUD
+│       └── page.tsx                  ← Job title and department CRUD in a single page
 │
 ├── components/
 │   ├── layout/
 │   │   └── Navbar.tsx                ← Nav links + sign-out button (client component)
 │   ├── employees/
-│   │   ├── EmployeeTable.tsx         ← Paginated table with sort columns
-│   │   ├── EmployeeFilters.tsx       ← Search + filter bar (name, country, dept, title, type)
-│   │   ├── EmployeeForm.tsx          ← Shared create/edit form
-│   │   ├── SalaryUpdateForm.tsx      ← Dedicated salary update form (own endpoint)
-│   │   └── DeleteEmployeeButton.tsx  ← Confirms then soft-deletes
+│   │   ├── EmployeeTable.tsx         ← Table with name links and delete buttons
+│   │   ├── EmployeeFilters.tsx       ← Search + filter bar (q, dept, title, employment type)
+│   │   ├── EmployeeForm.tsx          ← Shared create/edit form with validation errors
+│   │   ├── SalaryUpdateForm.tsx      ← Dedicated salary update form (PATCH /salary endpoint)
+│   │   └── DeleteEmployeeButton.tsx  ← Delete button with inline confirmation dialog
 │   ├── insights/
-│   │   ├── InsightsFilters.tsx       ← Country / dept / job title filter bar
-│   │   ├── SalaryInsightsPanel.tsx   ← Min/max/avg + breakdown table
+│   │   ├── SalaryInsightsPanel.tsx   ← Min/max/avg stats + breakdown table
 │   │   └── SalaryHistoryChart.tsx    ← Line chart via Chart.js (client component)
 │   └── settings/
 │       ├── JobTitleManager.tsx       ← Inline list with add/edit/delete
@@ -91,24 +86,43 @@ salary-management-frontend-app/
 ├── types/
 │   └── index.ts                      ← Shared TypeScript types (Employee, SalaryInsights, etc.)
 │
-├── proxy.ts                      ← Redirects unauthenticated requests to /sign-in
+├── proxy.ts                          ← Redirects unauthenticated requests to /sign-in
 │
 ├── __tests__/
 │   ├── lib/
 │   │   ├── auth.test.ts
 │   │   └── api.test.ts
-│   └── components/
+│   ├── components/
+│   │   ├── layout/
+│   │   │   └── Navbar.test.tsx
+│   │   ├── auth/
+│   │   │   └── SignInForm.test.tsx
+│   │   ├── employees/
+│   │   │   ├── EmployeeTable.test.tsx
+│   │   │   ├── EmployeeFilters.test.tsx
+│   │   │   ├── EmployeeForm.test.tsx
+│   │   │   ├── SalaryUpdateForm.test.tsx
+│   │   │   └── DeleteEmployeeButton.test.tsx
+│   │   ├── insights/
+│   │   │   ├── SalaryInsightsPanel.test.tsx
+│   │   │   └── SalaryHistoryChart.test.tsx
+│   │   └── settings/
+│   │       ├── JobTitleManager.test.tsx
+│   │       └── DepartmentManager.test.tsx
+│   └── app/
+│       ├── page.test.tsx
 │       ├── employees/
-│       │   ├── EmployeeTable.test.tsx
-│       │   ├── EmployeeFilters.test.tsx
-│       │   ├── EmployeeForm.test.tsx
-│       │   └── SalaryUpdateForm.test.tsx
+│       │   ├── page.test.tsx
+│       │   ├── new/
+│       │   │   └── page.test.tsx
+│       │   └── [id]/
+│       │       ├── page.test.tsx
+│       │       └── edit/
+│       │           └── page.test.tsx
 │       ├── insights/
-│       │   ├── SalaryInsightsPanel.test.tsx
-│       │   └── SalaryHistoryChart.test.tsx
+│       │   └── page.test.tsx
 │       └── settings/
-│           ├── JobTitleManager.test.tsx
-│           └── DepartmentManager.test.tsx
+│           └── page.test.tsx
 │
 ├── jest.config.ts
 ├── jest.setup.ts
@@ -131,9 +145,9 @@ The `"use client"` directive is placed at the component level, not the page leve
 
 The exceptions are pages that manage their own data-fetching state — those are Client Components in their entirety.
 
-### `params` and `searchParams` are Promises (Next.js 16)
+### Dynamic route params in Client Components
 
-Dynamic route segments (`[id]`) receive `params` as `Promise<{ id: string }>`. All dynamic pages unwrap them with `await params` before use.
+Next.js 16 delivers `params` as a `Promise<{ id: string }>`. Since all pages in this app are Client Components, params are accessed via `useParams()` from `next/navigation` rather than `use(params)`. This keeps the components straightforward and easier to test — the `next/navigation` mock simply returns the id directly without needing Suspense boundaries.
 
 ### Centralised API client
 

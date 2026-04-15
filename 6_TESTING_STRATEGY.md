@@ -15,7 +15,7 @@ The assignment asks for tests that are fast, deterministic, and easy to understa
 | **`jest-environment-jsdom`**      | Browser-like DOM environment for component tests                                    |
 | **`next/jest`**                   | Next.js transformer — handles path aliases, SWC compilation, and CSS module mocking |
 
-Tests live in `__tests__/`, mirroring the source structure (`__tests__/lib/`, `__tests__/components/`).
+Tests live in `__tests__/`, mirroring the source structure (`__tests__/lib/`, `__tests__/components/`, `__tests__/app/`).
 
 ---
 
@@ -57,14 +57,29 @@ Components are tested with RTL, rendering them with controlled props and simulat
 - User interactions trigger the correct callbacks (e.g. clicking "Delete" calls the `onDelete` prop).
 - Loading and error states are rendered correctly.
 - Form components show validation errors when the server returns a `422`.
-- Filter components update the URL query string on change.
+- Filter components call `onChange` with updated filter values on each interaction.
 
 **What component tests do not cover:**
 
-- The full page data-fetching cycle — that would require mocking the API client. Pages are lightweight and tested manually; the components they compose are tested in isolation.
 - CSS and visual correctness — Tailwind classes are not asserted on.
 
-### 4. What I'm not testing
+### 4. Pages — `app/`
+
+Pages are tested with the same RTL setup as components, but the API module is mocked with `jest.mock("@/lib/api", ...)` so that data-fetching calls can be stubbed and verified.
+
+**What page tests cover:**
+
+- The page renders the expected heading and primary UI after the initial data fetch resolves.
+- `useEffect` data-fetching calls are made with the correct arguments on mount.
+- Mutations (create, update, delete) trigger a refetch so that the UI stays in sync with the server.
+- Navigation after a mutation — for example, a successful employee creation redirects to `/employees`.
+
+**Mocking patterns:**
+
+- `next/navigation` is mocked to provide `useRouter` (`push`, `replace`) and `useParams` (returns the relevant `id`). This avoids Suspense complications that arise from using `use(params)` in a test environment.
+- `react-chartjs-2` is mocked with a lightweight `<div>` that forwards `aria-label` and `role` props so accessibility queries still work.
+
+### 5. What I'm not testing
 
 - Next.js routing — the framework guarantees that `app/employees/page.tsx` is served at `/employees`.
 - Third-party library internals — `chart.js`, `react-chartjs-2`, fetch behaviour.
