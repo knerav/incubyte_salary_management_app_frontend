@@ -29,12 +29,12 @@ describe("SalaryInsightsPanel", () => {
 
   it("shows the minimum salary", () => {
     render(<SalaryInsightsPanel insights={mockInsights} />);
-    expect(screen.getByText(/50000/)).toBeInTheDocument();
+    expect(screen.getByText("50000.00")).toBeInTheDocument();
   });
 
   it("shows the maximum salary", () => {
     render(<SalaryInsightsPanel insights={mockInsights} />);
-    expect(screen.getByText(/150000/)).toBeInTheDocument();
+    expect(screen.getByText("150000.00")).toBeInTheDocument();
   });
 
   it("shows a breakdown row for each job title", () => {

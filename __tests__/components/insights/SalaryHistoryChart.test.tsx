@@ -4,8 +4,18 @@ import type { HistoricalSalaryInsights } from "@/types";
 
 // Mock chart.js so tests don't need a canvas environment
 jest.mock("react-chartjs-2", () => ({
-  Line: ({ "aria-label": label }: { "aria-label"?: string }) => (
-    <div data-testid="line-chart" aria-label={label ?? "Salary history chart"}>
+  Line: ({
+    "aria-label": label,
+    role,
+  }: {
+    "aria-label"?: string;
+    role?: string;
+  }) => (
+    <div
+      data-testid="line-chart"
+      aria-label={label ?? "Salary history chart"}
+      role={role ?? "img"}
+    >
       Chart
     </div>
   ),
