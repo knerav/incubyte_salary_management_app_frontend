@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { getEmployee, deleteEmployee } from "@/lib/api";
-import type { Employee } from "@/types";
+import { getEmployee, deleteEmployee, updateSalary } from "@/lib/api";
+import type { Employee, SalaryUpdateData } from "@/types";
 import DeleteEmployeeButton from "@/components/employees/DeleteEmployeeButton";
+import SalaryUpdateForm from "@/components/employees/SalaryUpdateForm";
 
 export default function EmployeePage() {
   const { id } = useParams<{ id: string }>();
@@ -22,13 +23,18 @@ export default function EmployeePage() {
     router.push("/employees");
   }
 
+  async function handleSalaryUpdate(data: SalaryUpdateData) {
+    const updated = await updateSalary(numId, data);
+    setEmployee(updated);
+  }
+
   if (!employee) {
     return <main className="mx-auto max-w-3xl px-4 py-8"><p>Loading…</p></main>;
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
-      <div className="mb-6 flex items-start justify-between">
+    <main className="mx-auto max-w-3xl px-4 py-8 space-y-8">
+      <div className="flex items-start justify-between">
         <h1 className="text-2xl font-bold">
           {employee.first_name} {employee.last_name}
         </h1>
@@ -80,6 +86,15 @@ export default function EmployeePage() {
           <dd>{employee.hired_on}</dd>
         </div>
       </dl>
+
+      <div className="border-t pt-6">
+        <h2 className="mb-4 text-lg font-semibold">Update Salary</h2>
+        <SalaryUpdateForm
+          currentSalary={employee.salary}
+          currentCurrency={employee.currency}
+          onSubmit={handleSalaryUpdate}
+        />
+      </div>
     </main>
   );
 }
