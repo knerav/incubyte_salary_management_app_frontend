@@ -13,6 +13,7 @@ import type { EmployeeFilters } from "@/lib/api";
 import EmployeeTable from "@/components/employees/EmployeeTable";
 import EmployeeFiltersComponent from "@/components/employees/EmployeeFilters";
 import EmployeeForm from "@/components/employees/EmployeeForm";
+import Pagination from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -124,6 +125,16 @@ export default function EmployeesPage() {
         employees={employees}
         meta={meta}
         onDelete={(id) => setPendingDeleteId(id)}
+      />
+
+      <Pagination
+        page={meta.page}
+        totalPages={meta.total_pages}
+        onPageChange={(page) => {
+          const updated = { ...filters, page };
+          setFilters(updated);
+          fetchEmployees(updated);
+        }}
       />
 
       {/* Add Employee Dialog */}

@@ -96,6 +96,37 @@ describe("EmployeesPage", () => {
     });
   });
 
+  describe("pagination", () => {
+    it("does not show pagination when there is only one page", async () => {
+      render(<EmployeesPage />);
+      await screen.findByText("Jane Smith");
+      expect(screen.queryByRole("navigation", { name: /pagination/i })).not.toBeInTheDocument();
+    });
+
+    it("shows pagination when there are multiple pages", async () => {
+      mockListEmployees.mockResolvedValue({
+        employees: [mockEmployee],
+        meta: { total: 50, page: 1, per_page: 25, total_pages: 2 },
+      });
+      render(<EmployeesPage />);
+      await screen.findByText("Jane Smith");
+      expect(screen.getByRole("navigation", { name: /pagination/i })).toBeInTheDocument();
+    });
+
+    it("fetches the next page when the next button is clicked", async () => {
+      mockListEmployees.mockResolvedValue({
+        employees: [mockEmployee],
+        meta: { total: 50, page: 1, per_page: 25, total_pages: 2 },
+      });
+      render(<EmployeesPage />);
+      await screen.findByText("Jane Smith");
+      await userEvent.click(screen.getByRole("link", { name: /next/i }));
+      await waitFor(() => {
+        expect(mockListEmployees).toHaveBeenCalledWith(expect.objectContaining({ page: 2 }));
+      });
+    });
+  });
+
   describe("add employee dialog", () => {
     it("opens the dialog when the add employee button is clicked", async () => {
       render(<EmployeesPage />);
