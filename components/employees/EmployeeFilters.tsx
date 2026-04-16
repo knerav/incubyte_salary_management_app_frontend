@@ -36,70 +36,82 @@ export default function EmployeeFilters({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <Input
-        role="searchbox"
-        type="search"
-        placeholder="Search employees…"
-        value={internal.q ?? ""}
-        onChange={(e) => update({ q: e.target.value })}
-        className="h-9 w-48"
-      />
+    <div className="flex flex-wrap items-end gap-2">
+      <div className="flex flex-col gap-1">
+        <span className="text-xs font-medium text-muted-foreground">Search</span>
+        <Input
+          role="searchbox"
+          type="search"
+          placeholder="Search employees…"
+          value={internal.q ?? ""}
+          onChange={(e) => update({ q: e.target.value })}
+          className="h-9 w-48"
+        />
+      </div>
 
-      <Select
-        value={internal.employment_type ?? ALL}
-        onValueChange={(v) =>
-          update({ employment_type: v === ALL ? undefined : v })
-        }
-      >
-        <SelectTrigger aria-label="Employment Type">
-          <SelectValue placeholder="Employment Type" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={ALL}>All</SelectItem>
-          <SelectItem value="full_time">Full Time</SelectItem>
-          <SelectItem value="part_time">Part Time</SelectItem>
-          <SelectItem value="contract">Contract</SelectItem>
-        </SelectContent>
-      </Select>
+      <div className="flex flex-col gap-1">
+        <span className="text-xs font-medium text-muted-foreground">Employment Type</span>
+        <Select
+          value={internal.employment_type ?? ALL}
+          onValueChange={(v) =>
+            update({ employment_type: v === ALL ? undefined : v })
+          }
+        >
+          <SelectTrigger aria-label="Employment Type">
+            <SelectValue placeholder="All" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>All</SelectItem>
+            <SelectItem value="full_time">Full Time</SelectItem>
+            <SelectItem value="part_time">Part Time</SelectItem>
+            <SelectItem value="contract">Contract</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-      <Select
-        value={internal.department_id?.toString() ?? ALL}
-        onValueChange={(v) =>
-          update({ department_id: v === ALL ? undefined : parseInt(v, 10) })
-        }
-      >
-        <SelectTrigger aria-label="Department">
-          <SelectValue placeholder="Department" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={ALL}>All</SelectItem>
-          {departments.map((d) => (
-            <SelectItem key={d.id} value={d.id.toString()}>
-              {d.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex flex-col gap-1">
+        <span className="text-xs font-medium text-muted-foreground">Department</span>
+        <Select
+          value={internal.department_id?.toString() ?? ALL}
+          onValueChange={(v) =>
+            update({ department_id: v === ALL ? undefined : parseInt(v, 10) })
+          }
+        >
+          <SelectTrigger aria-label="Department">
+            <SelectValue placeholder="All" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>All</SelectItem>
+            {departments.map((d) => (
+              <SelectItem key={d.id} value={d.id.toString()}>
+                {d.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-      <Select
-        value={internal.job_title_id?.toString() ?? ALL}
-        onValueChange={(v) =>
-          update({ job_title_id: v === ALL ? undefined : parseInt(v, 10) })
-        }
-      >
-        <SelectTrigger aria-label="Job Title">
-          <SelectValue placeholder="Job Title" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={ALL}>All</SelectItem>
-          {jobTitles.map((jt) => (
-            <SelectItem key={jt.id} value={jt.id.toString()}>
-              {jt.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex flex-col gap-1">
+        <span className="text-xs font-medium text-muted-foreground">Job Title</span>
+        <Select
+          value={internal.job_title_id?.toString() ?? ALL}
+          onValueChange={(v) =>
+            update({ job_title_id: v === ALL ? undefined : parseInt(v, 10) })
+          }
+        >
+          <SelectTrigger aria-label="Job Title">
+            <SelectValue placeholder="All" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>All</SelectItem>
+            {jobTitles.map((jt) => (
+              <SelectItem key={jt.id} value={jt.id.toString()}>
+                {jt.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 }

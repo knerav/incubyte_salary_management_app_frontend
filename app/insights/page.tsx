@@ -56,48 +56,54 @@ export default function InsightsPage() {
         <div>
           <h1 className="text-2xl font-bold">Insights</h1>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Select
-            value={filters.department_id?.toString() ?? ALL}
-            onValueChange={(v) =>
-              handleFilterChange({
-                department_id: v === ALL ? undefined : parseInt(v, 10),
-              })
-            }
-          >
-            <SelectTrigger aria-label="Department">
-              <SelectValue placeholder="Department" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>All</SelectItem>
-              {departments.map((d) => (
-                <SelectItem key={d.id} value={d.id.toString()}>
-                  {d.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground">Department</span>
+            <Select
+              value={filters.department_id?.toString() ?? ALL}
+              onValueChange={(v) =>
+                handleFilterChange({
+                  department_id: v === ALL ? undefined : parseInt(v, 10),
+                })
+              }
+            >
+              <SelectTrigger aria-label="Department">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All</SelectItem>
+                {departments.map((d) => (
+                  <SelectItem key={d.id} value={d.id.toString()}>
+                    {d.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Select
-            value={filters.job_title_id?.toString() ?? ALL}
-            onValueChange={(v) =>
-              handleFilterChange({
-                job_title_id: v === ALL ? undefined : parseInt(v, 10),
-              })
-            }
-          >
-            <SelectTrigger aria-label="Job Title">
-              <SelectValue placeholder="Job Title" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>All</SelectItem>
-              {jobTitles.map((jt) => (
-                <SelectItem key={jt.id} value={jt.id.toString()}>
-                  {jt.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground">Job Title</span>
+            <Select
+              value={filters.job_title_id?.toString() ?? ALL}
+              onValueChange={(v) =>
+                handleFilterChange({
+                  job_title_id: v === ALL ? undefined : parseInt(v, 10),
+                })
+              }
+            >
+              <SelectTrigger aria-label="Job Title">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All</SelectItem>
+                {jobTitles.map((jt) => (
+                  <SelectItem key={jt.id} value={jt.id.toString()}>
+                    {jt.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 

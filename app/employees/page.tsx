@@ -32,7 +32,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, Plus, XCircle } from "lucide-react";
 
 type AddDialogView = "form" | "success" | "error";
 
@@ -106,7 +106,9 @@ export default function EmployeesPage() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold">Employees</h1>
-          <Button size="sm" onClick={openAddDialog}>Add Employee</Button>
+          <Button size="icon-sm" aria-label="Add Employee" onClick={openAddDialog}>
+            <Plus />
+          </Button>
         </div>
         <div>
           <EmployeeFiltersComponent
