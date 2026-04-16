@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { CircleUser } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,8 +47,8 @@ export default function Navbar() {
       <div className="mx-auto max-w-6xl flex h-14 items-center justify-between px-6">
 
         {/* Left: brand */}
-        <Link href="/" className="text-sm font-semibold tracking-tight">
-          Salary Manager
+        <Link href="/">
+          <Image src="/hrpulse_logo.png" alt="HR Pulse" height={32} width={120} className="h-40 w-auto object-contain" unoptimized />
         </Link>
 
         {/* Center: nav links — desktop only */}
