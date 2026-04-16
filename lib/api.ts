@@ -28,9 +28,50 @@ function authHeaders(): Record<string, string> {
   return token ? { Authorization: token } : {};
 }
 
+let _refreshPromise: Promise<boolean> | null = null;
+
+async function tryRefreshToken(): Promise<boolean> {
+  if (_refreshPromise) return _refreshPromise;
+
+  _refreshPromise = (async () => {
+    const token = getToken();
+    if (!token) return false;
+
+    const response = await fetch(`${BASE_URL}/api/v1/users/refresh`, {
+      method: "POST",
+      headers: { Authorization: token },
+    });
+
+    if (!response.ok) return false;
+
+    const newToken = response.headers.get("Authorization");
+    if (newToken) {
+      setToken(newToken);
+      return true;
+    }
+    return false;
+  })().finally(() => {
+    _refreshPromise = null;
+  });
+
+  return _refreshPromise;
+}
+
+// Exported so tests can spy on it without touching window.location
+export const _navigate = {
+  to: (path: string) => { window.location.href = path; },
+};
+
+function redirectToSignIn(): never {
+  clearToken();
+  _navigate.to("/sign-in");
+  throw new AuthError("Unauthorized");
+}
+
 async function request<T>(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  isRetry = false
 ): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`, {
     ...options,
@@ -42,8 +83,13 @@ async function request<T>(
   });
 
   if (response.status === 401) {
-    clearToken();
-    throw new AuthError("Unauthorized");
+    if (!isRetry) {
+      const refreshed = await tryRefreshToken();
+      if (refreshed) {
+        return request<T>(path, options, true);
+      }
+    }
+    redirectToSignIn();
   }
 
   if (response.status === 204) {
