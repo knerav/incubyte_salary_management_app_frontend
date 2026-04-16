@@ -36,13 +36,15 @@ export default function EmployeeFilters({
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-2">
+    <div className="flex flex-wrap items-end gap-3">
       <div className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-muted-foreground">Search</span>
+        <span className="text-xs font-medium text-muted-foreground">
+          Search
+        </span>
         <Input
           role="searchbox"
           type="search"
-          placeholder="Search employees…"
+          placeholder="Search by name..."
           value={internal.q ?? ""}
           onChange={(e) => update({ q: e.target.value })}
           className="h-9 w-48"
@@ -50,14 +52,16 @@ export default function EmployeeFilters({
       </div>
 
       <div className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-muted-foreground">Employment Type</span>
+        <span className="text-xs font-medium text-muted-foreground">
+          Employment Type
+        </span>
         <Select
           value={internal.employment_type ?? ALL}
           onValueChange={(v) =>
             update({ employment_type: v === ALL ? undefined : v })
           }
         >
-          <SelectTrigger aria-label="Employment Type">
+          <SelectTrigger className="w-full" aria-label="Employment Type">
             <SelectValue placeholder="All" />
           </SelectTrigger>
           <SelectContent>
@@ -70,14 +74,16 @@ export default function EmployeeFilters({
       </div>
 
       <div className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-muted-foreground">Department</span>
+        <span className="text-xs font-medium text-muted-foreground">
+          Department
+        </span>
         <Select
           value={internal.department_id?.toString() ?? ALL}
           onValueChange={(v) =>
             update({ department_id: v === ALL ? undefined : parseInt(v, 10) })
           }
         >
-          <SelectTrigger aria-label="Department">
+          <SelectTrigger className="w-full" aria-label="Department">
             <SelectValue placeholder="All" />
           </SelectTrigger>
           <SelectContent>
@@ -92,14 +98,16 @@ export default function EmployeeFilters({
       </div>
 
       <div className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-muted-foreground">Job Title</span>
+        <span className="text-xs font-medium text-muted-foreground">
+          Job Title
+        </span>
         <Select
           value={internal.job_title_id?.toString() ?? ALL}
           onValueChange={(v) =>
             update({ job_title_id: v === ALL ? undefined : parseInt(v, 10) })
           }
         >
-          <SelectTrigger aria-label="Job Title">
+          <SelectTrigger className="w-full" aria-label="Job Title">
             <SelectValue placeholder="All" />
           </SelectTrigger>
           <SelectContent>
