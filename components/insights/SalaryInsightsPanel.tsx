@@ -1,9 +1,28 @@
 "use client";
 
 import type { SalaryInsights } from "@/types";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface Props {
   insights: SalaryInsights;
+}
+
+function StatCard({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-lg border bg-card p-4">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1 text-2xl font-bold">{value}</p>
+    </div>
+  );
 }
 
 export default function SalaryInsightsPanel({ insights }: Props) {
@@ -13,45 +32,31 @@ export default function SalaryInsightsPanel({ insights }: Props) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-lg border bg-white p-4">
-          <p className="text-xs font-medium uppercase text-gray-500">Employees</p>
-          <p className="mt-1 text-2xl font-bold">{employee_count}</p>
-        </div>
-        <div className="rounded-lg border bg-white p-4">
-          <p className="text-xs font-medium uppercase text-gray-500">Avg Salary</p>
-          <p className="mt-1 text-2xl font-bold">{avg_salary}</p>
-        </div>
-        <div className="rounded-lg border bg-white p-4">
-          <p className="text-xs font-medium uppercase text-gray-500">Min Salary</p>
-          <p className="mt-1 text-2xl font-bold">{min_salary}</p>
-        </div>
-        <div className="rounded-lg border bg-white p-4">
-          <p className="text-xs font-medium uppercase text-gray-500">Max Salary</p>
-          <p className="mt-1 text-2xl font-bold">{max_salary}</p>
-        </div>
+        <StatCard label="Employees" value={employee_count} />
+        <StatCard label="Avg Salary" value={avg_salary} />
+        <StatCard label="Min Salary" value={min_salary} />
+        <StatCard label="Max Salary" value={max_salary} />
       </div>
 
       {breakdowns.length > 0 && (
         <div>
-          <h3 className="mb-2 text-sm font-semibold text-gray-700">
-            Breakdown by Job Title
-          </h3>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left text-gray-500">
-                <th className="py-1.5 pr-4 font-medium">Job Title</th>
-                <th className="py-1.5 font-medium">Avg Salary</th>
-              </tr>
-            </thead>
-            <tbody>
+          <h3 className="mb-2 text-sm font-semibold">Breakdown by Job Title</h3>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Job Title</TableHead>
+                <TableHead>Avg Salary</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {breakdowns.map((row) => (
-                <tr key={row.job_title} className="border-b">
-                  <td className="py-1.5 pr-4">{row.job_title}</td>
-                  <td className="py-1.5">{row.avg_salary}</td>
-                </tr>
+                <TableRow key={row.job_title}>
+                  <TableCell>{row.job_title}</TableCell>
+                  <TableCell>{row.avg_salary}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

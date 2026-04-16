@@ -11,6 +11,16 @@ import type { Department, HistoricalSalaryInsights, JobTitle, SalaryInsights } f
 import type { InsightFilters } from "@/lib/api";
 import SalaryInsightsPanel from "@/components/insights/SalaryInsightsPanel";
 import SalaryHistoryChart from "@/components/insights/SalaryHistoryChart";
+import { BarChart3 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const ALL = "all";
 
 export default function InsightsPage() {
   const [insights, setInsights] = useState<SalaryInsights | null>(null);
@@ -41,68 +51,79 @@ export default function InsightsPage() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold">Insights</h1>
-
-      <div className="mb-6 flex flex-wrap gap-3">
-        <label className="flex flex-col gap-1 text-sm">
-          <span>Department</span>
-          <select
-            aria-label="Department"
-            value={filters.department_id ?? ""}
-            onChange={(e) =>
+    <main className="mx-auto max-w-6xl px-6 py-8 w-full">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Insights</h1>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select
+            value={filters.department_id?.toString() ?? ALL}
+            onValueChange={(v) =>
               handleFilterChange({
-                department_id: e.target.value
-                  ? parseInt(e.target.value, 10)
-                  : undefined,
+                department_id: v === ALL ? undefined : parseInt(v, 10),
               })
             }
-            className="rounded border px-3 py-1.5 text-sm"
           >
-            <option value="">All</option>
-            {departments.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
-        </label>
+            <SelectTrigger aria-label="Department">
+              <SelectValue placeholder="Department" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All</SelectItem>
+              {departments.map((d) => (
+                <SelectItem key={d.id} value={d.id.toString()}>
+                  {d.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <label className="flex flex-col gap-1 text-sm">
-          <span>Job Title</span>
-          <select
-            aria-label="Job Title"
-            value={filters.job_title_id ?? ""}
-            onChange={(e) =>
+          <Select
+            value={filters.job_title_id?.toString() ?? ALL}
+            onValueChange={(v) =>
               handleFilterChange({
-                job_title_id: e.target.value
-                  ? parseInt(e.target.value, 10)
-                  : undefined,
+                job_title_id: v === ALL ? undefined : parseInt(v, 10),
               })
             }
-            className="rounded border px-3 py-1.5 text-sm"
           >
-            <option value="">All</option>
-            {jobTitles.map((jt) => (
-              <option key={jt.id} value={jt.id}>
-                {jt.name}
-              </option>
-            ))}
-          </select>
-        </label>
+            <SelectTrigger aria-label="Job Title">
+              <SelectValue placeholder="Job Title" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All</SelectItem>
+              {jobTitles.map((jt) => (
+                <SelectItem key={jt.id} value={jt.id.toString()}>
+                  {jt.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {insights && (
-        <div className="mb-8">
-          <SalaryInsightsPanel insights={insights} />
+      {insights && insights.insights.employee_count === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <BarChart3 className="mb-4 h-12 w-12 text-muted-foreground" />
+          <h3 className="text-lg font-semibold">No data to display</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Try adjusting your filters to see salary insights.
+          </p>
         </div>
-      )}
+      ) : (
+        <>
+          {insights && (
+            <div className="mb-8">
+              <SalaryInsightsPanel insights={insights} />
+            </div>
+          )}
 
-      {history && (
-        <div className="rounded-lg border bg-white p-4">
-          <h2 className="mb-4 text-lg font-semibold">Salary History</h2>
-          <SalaryHistoryChart history={history} />
-        </div>
+          {history && (
+            <div className="rounded-lg border bg-card p-6">
+              <h2 className="mb-4 text-lg font-semibold">Salary History</h2>
+              <SalaryHistoryChart history={history} />
+            </div>
+          )}
+        </>
       )}
     </main>
   );

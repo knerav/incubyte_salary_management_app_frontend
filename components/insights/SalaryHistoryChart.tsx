@@ -30,7 +30,7 @@ interface Props {
 export default function SalaryHistoryChart({ history }: Props) {
   if (history.series.length === 0) {
     return (
-      <p className="py-8 text-center text-gray-500">No data available</p>
+      <p className="py-8 text-center text-muted-foreground">No data available</p>
     );
   }
 
