@@ -17,9 +17,10 @@ interface Props {
   employees: Employee[];
   meta: PaginationMeta;
   onDelete: (id: number) => void;
+  onSelect?: (id: number) => void;
 }
 
-export default function EmployeeTable({ employees, meta, onDelete }: Props) {
+export default function EmployeeTable({ employees, meta, onDelete, onSelect }: Props) {
   if (employees.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center text-center">
@@ -49,12 +50,21 @@ export default function EmployeeTable({ employees, meta, onDelete }: Props) {
           {employees.map((employee) => (
             <TableRow key={employee.id}>
               <TableCell>
-                <Link
-                  href={`/employees/${employee.id}`}
-                  className="font-medium hover:underline"
-                >
-                  {employee.first_name} {employee.last_name}
-                </Link>
+                {onSelect ? (
+                  <button
+                    onClick={() => onSelect(employee.id)}
+                    className="font-medium hover:underline text-left"
+                  >
+                    {employee.first_name} {employee.last_name}
+                  </button>
+                ) : (
+                  <Link
+                    href={`/employees/${employee.id}`}
+                    className="font-medium hover:underline"
+                  >
+                    {employee.first_name} {employee.last_name}
+                  </Link>
+                )}
               </TableCell>
               <TableCell>{employee.job_title}</TableCell>
               <TableCell>{employee.department}</TableCell>

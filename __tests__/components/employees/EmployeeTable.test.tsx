@@ -4,6 +4,7 @@ import EmployeeTable from "@/components/employees/EmployeeTable";
 import type { Employee, PaginationMeta } from "@/types";
 
 const mockOnDelete = jest.fn();
+const mockOnSelect = jest.fn();
 
 const mockEmployees: Employee[] = [
   {
@@ -71,22 +72,17 @@ describe("EmployeeTable", () => {
     expect(screen.getByText("US")).toBeInTheDocument();
   });
 
-  it("renders a link to the employee profile for each row", () => {
+  it("renders a button for each employee name that calls onSelect", async () => {
     render(
       <EmployeeTable
         employees={mockEmployees}
         meta={mockMeta}
         onDelete={mockOnDelete}
+        onSelect={mockOnSelect}
       />
     );
-    expect(screen.getByRole("link", { name: "Jane Smith" })).toHaveAttribute(
-      "href",
-      "/employees/1"
-    );
-    expect(screen.getByRole("link", { name: "John Doe" })).toHaveAttribute(
-      "href",
-      "/employees/2"
-    );
+    await userEvent.click(screen.getByRole("button", { name: "Jane Smith" }));
+    expect(mockOnSelect).toHaveBeenCalledWith(1);
   });
 
   it("renders an edit link for each employee pointing to the edit page", () => {

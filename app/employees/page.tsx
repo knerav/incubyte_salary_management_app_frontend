@@ -7,6 +7,7 @@ import {
   listDepartments,
   deleteEmployee,
   createEmployee,
+  getEmployee,
 } from "@/lib/api";
 import type { Department, Employee, EmployeeFormData, JobTitle, PaginationMeta } from "@/types";
 import type { EmployeeFilters } from "@/lib/api";
@@ -34,6 +35,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { CheckCircle2, Plus, XCircle } from "lucide-react";
+import Link from "next/link";
 
 type AddDialogView = "form" | "success" | "error";
 
@@ -52,6 +54,7 @@ export default function EmployeesPage() {
   const [deleting, setDeleting] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addDialogView, setAddDialogView] = useState<AddDialogView>("form");
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
   async function fetchEmployees(f: EmployeeFilters = filters) {
     const data = await listEmployees(f);
@@ -90,6 +93,11 @@ export default function EmployeesPage() {
     }
   }
 
+  async function handleSelectEmployee(id: number) {
+    const emp = await getEmployee(id);
+    setSelectedEmployee(emp);
+  }
+
   async function handleConfirmDelete() {
     if (pendingDeleteId == null) return;
     setDeleting(true);
@@ -125,6 +133,7 @@ export default function EmployeesPage() {
         employees={employees}
         meta={meta}
         onDelete={(id) => setPendingDeleteId(id)}
+        onSelect={handleSelectEmployee}
       />
 
       <Pagination
@@ -136,6 +145,37 @@ export default function EmployeesPage() {
           fetchEmployees(updated);
         }}
       />
+
+      {/* Employee Show Dialog */}
+      <Dialog open={selectedEmployee != null} onOpenChange={(open) => { if (!open) setSelectedEmployee(null); }}>
+        {selectedEmployee && (
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>{selectedEmployee.first_name} {selectedEmployee.last_name}</DialogTitle>
+              <DialogDescription>{selectedEmployee.job_title} · {selectedEmployee.department}</DialogDescription>
+            </DialogHeader>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+              {[
+                ["Email", selectedEmployee.email],
+                ["Country", selectedEmployee.country],
+                ["Salary", `${selectedEmployee.salary} ${selectedEmployee.currency}`],
+                ["Employment Type", selectedEmployee.employment_type.replace("_", " ")],
+                ["Hired On", selectedEmployee.hired_on],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</dt>
+                  <dd className="mt-0.5">{value}</dd>
+                </div>
+              ))}
+            </dl>
+            <DialogFooter>
+              <Button variant="outline" asChild>
+                <Link href={`/employees/${selectedEmployee.id}/edit`}>Edit</Link>
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        )}
+      </Dialog>
 
       {/* Add Employee Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>

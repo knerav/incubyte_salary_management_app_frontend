@@ -9,6 +9,7 @@ jest.mock("@/lib/api", () => ({
   listDepartments: jest.fn(),
   deleteEmployee: jest.fn(),
   createEmployee: jest.fn(),
+  getEmployee: jest.fn(),
 }));
 
 jest.mock("next/navigation", () => ({
@@ -23,6 +24,7 @@ import {
   listDepartments,
   deleteEmployee,
   createEmployee,
+  getEmployee,
 } from "@/lib/api";
 
 const mockListEmployees = listEmployees as jest.MockedFunction<typeof listEmployees>;
@@ -30,6 +32,7 @@ const mockListJobTitles = listJobTitles as jest.MockedFunction<typeof listJobTit
 const mockListDepartments = listDepartments as jest.MockedFunction<typeof listDepartments>;
 const mockDeleteEmployee = deleteEmployee as jest.MockedFunction<typeof deleteEmployee>;
 const mockCreateEmployee = createEmployee as jest.MockedFunction<typeof createEmployee>;
+const mockGetEmployee = getEmployee as jest.MockedFunction<typeof getEmployee>;
 
 const mockEmployee: Employee = {
   id: 1,
@@ -58,6 +61,7 @@ beforeEach(() => {
   mockListEmployees.mockResolvedValue(mockResponse);
   mockListJobTitles.mockResolvedValue(mockJobTitles);
   mockListDepartments.mockResolvedValue(mockDepartments);
+  mockGetEmployee.mockResolvedValue(mockEmployee);
 });
 
 describe("EmployeesPage", () => {
@@ -93,6 +97,23 @@ describe("EmployeesPage", () => {
 
     await waitFor(() => {
       expect(mockListEmployees).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("employee show modal", () => {
+    it("opens a modal with employee details when an employee name is clicked", async () => {
+      render(<EmployeesPage />);
+      await userEvent.click(await screen.findByRole("button", { name: "Jane Smith" }));
+      expect(await screen.findByRole("dialog")).toBeInTheDocument();
+      expect(await screen.findByText("jane@example.com")).toBeInTheDocument();
+    });
+
+    it("closes the modal when the close button is clicked", async () => {
+      render(<EmployeesPage />);
+      await userEvent.click(await screen.findByRole("button", { name: "Jane Smith" }));
+      await screen.findByRole("dialog");
+      await userEvent.click(screen.getByRole("button", { name: /close/i }));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
   });
 
