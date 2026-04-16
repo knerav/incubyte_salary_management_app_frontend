@@ -20,6 +20,7 @@ import {
   deleteDepartment,
   getSalaryInsights,
   getHistoricalSalaryInsights,
+  _navigate,
 } from "@/lib/api";
 import type { EmployeeFormData, SalaryUpdateData } from "@/types";
 
@@ -127,10 +128,13 @@ describe("listEmployees", () => {
     expect(url).toContain("country=US");
   });
 
-  it("clears the token and throws on a 401 response", async () => {
-    mockFetch(401, { error: "Unauthorized" });
+  it("clears the token, redirects to /sign-in, and throws when both the request and refresh return 401", async () => {
+    const mockNavigate = jest.spyOn(_navigate, "to").mockImplementation(() => {});
+    mockFetch(401, { error: "Unauthorized" }); // all calls return 401 (refresh included)
     await expect(listEmployees({})).rejects.toThrow();
     expect(mockClearToken).toHaveBeenCalled();
+    expect(mockNavigate).toHaveBeenCalledWith("/sign-in");
+    mockNavigate.mockRestore();
   });
 });
 
@@ -317,5 +321,132 @@ describe("getHistoricalSalaryInsights", () => {
     const url = (fetch as jest.Mock).mock.calls[0][0] as string;
     expect(url).toContain("/api/v1/insights/salary/history");
     expect(url).toContain("group_by=month");
+  });
+});
+
+function mockFetchSequence(
+  ...responses: Array<{ status: number; body: unknown; headers?: Record<string, string> }>
+) {
+  global.fetch = jest.fn();
+  for (const { status, body, headers } of responses) {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: status >= 200 && status < 300,
+      status,
+      headers: { get: (key: string) => (headers ?? {})[key] ?? null },
+      json: jest.fn().mockResolvedValue(body),
+    });
+  }
+}
+
+const successfulEmployeeList = {
+  employees: [],
+  meta: { total: 0, page: 1, per_page: 25, total_pages: 0 },
+};
+
+describe("token refresh on 401", () => {
+  let mockNavigate: jest.SpyInstance;
+
+  beforeEach(() => {
+    mockNavigate = jest.spyOn(_navigate, "to").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    mockNavigate.mockRestore();
+  });
+
+  it("calls the refresh endpoint with the current token when a request returns 401", async () => {
+    mockFetchSequence(
+      { status: 401, body: {} },
+      { status: 200, body: {}, headers: { Authorization: "Bearer new.token" } },
+      { status: 200, body: successfulEmployeeList },
+    );
+
+    await listEmployees({});
+
+    expect(fetch).toHaveBeenNthCalledWith(
+      2,
+      `${BASE_URL}/api/v1/users/refresh`,
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({ Authorization: "Bearer mock.jwt.token" }),
+      })
+    );
+  });
+
+  it("stores the new token returned by the refresh endpoint", async () => {
+    mockFetchSequence(
+      { status: 401, body: {} },
+      { status: 200, body: {}, headers: { Authorization: "Bearer new.token" } },
+      { status: 200, body: successfulEmployeeList },
+    );
+
+    await listEmployees({});
+
+    expect(mockSetToken).toHaveBeenCalledWith("Bearer new.token");
+  });
+
+  it("retries the original request with the refreshed token and returns the result", async () => {
+    mockGetToken
+      .mockReturnValueOnce("Bearer mock.jwt.token") // initial request
+      .mockReturnValueOnce("Bearer mock.jwt.token") // refresh call
+      .mockReturnValue("Bearer new.token");          // retry request
+
+    mockFetchSequence(
+      { status: 401, body: {} },
+      { status: 200, body: {}, headers: { Authorization: "Bearer new.token" } },
+      { status: 200, body: successfulEmployeeList },
+    );
+
+    const result = await listEmployees({});
+
+    expect(fetch).toHaveBeenNthCalledWith(
+      3,
+      expect.stringContaining("/api/v1/employees"),
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: "Bearer new.token" }),
+      })
+    );
+    expect(result).toEqual(successfulEmployeeList);
+  });
+
+  it("clears the token and redirects to /sign-in when refresh also returns 401", async () => {
+    mockFetchSequence(
+      { status: 401, body: {} },
+      { status: 401, body: {} },
+    );
+
+    await expect(listEmployees({})).rejects.toThrow();
+
+    expect(mockClearToken).toHaveBeenCalled();
+    expect(mockNavigate).toHaveBeenCalledWith("/sign-in");
+  });
+
+  it("does not attempt a refresh when retrying (prevents infinite loop)", async () => {
+    mockFetchSequence(
+      { status: 401, body: {} },
+      { status: 200, body: {}, headers: { Authorization: "Bearer new.token" } },
+      { status: 401, body: {} }, // retry also 401
+    );
+
+    await expect(listEmployees({})).rejects.toThrow();
+
+    expect(fetch).toHaveBeenCalledTimes(3); // original + refresh + retry only
+    expect(mockClearToken).toHaveBeenCalled();
+    expect(mockNavigate).toHaveBeenCalledWith("/sign-in");
+  });
+
+  it("fires only one refresh request when concurrent calls all return 401", async () => {
+    // 2 concurrent originals (both 401), 1 shared refresh, 2 retries
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce({ ok: false, status: 401, headers: { get: () => null }, json: jest.fn().mockResolvedValue({}) })
+      .mockResolvedValueOnce({ ok: false, status: 401, headers: { get: () => null }, json: jest.fn().mockResolvedValue({}) })
+      .mockResolvedValueOnce({ ok: true,  status: 200, headers: { get: (k: string) => k === "Authorization" ? "Bearer new.token" : null }, json: jest.fn().mockResolvedValue({}) })
+      .mockResolvedValue({ ok: true, status: 200, headers: { get: () => null }, json: jest.fn().mockResolvedValue(successfulEmployeeList) });
+
+    await Promise.all([listEmployees({}), listEmployees({})]);
+
+    const calls = (fetch as jest.Mock).mock.calls;
+    const refreshCalls = calls.filter(([url]) => String(url).includes("/refresh"));
+    expect(refreshCalls).toHaveLength(1);
   });
 });
