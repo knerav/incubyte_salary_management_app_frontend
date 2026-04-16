@@ -89,6 +89,24 @@ describe("EmployeeTable", () => {
     );
   });
 
+  it("renders an edit link for each employee pointing to the edit page", () => {
+    render(
+      <EmployeeTable
+        employees={mockEmployees}
+        meta={mockMeta}
+        onDelete={mockOnDelete}
+      />
+    );
+    expect(screen.getByRole("link", { name: /edit jane smith/i })).toHaveAttribute(
+      "href",
+      "/employees/1/edit"
+    );
+    expect(screen.getByRole("link", { name: /edit john doe/i })).toHaveAttribute(
+      "href",
+      "/employees/2/edit"
+    );
+  });
+
   it("renders a delete button for each employee", () => {
     render(
       <EmployeeTable

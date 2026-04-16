@@ -60,14 +60,24 @@ export default function EmployeeTable({ employees, meta, onDelete }: Props) {
               <TableCell>{employee.department}</TableCell>
               <TableCell>{employee.country}</TableCell>
               <TableCell>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onDelete(employee.id)}
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                >
-                  Delete
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link
+                      href={`/employees/${employee.id}/edit`}
+                      aria-label={`Edit ${employee.first_name} ${employee.last_name}`}
+                    >
+                      Edit
+                    </Link>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onDelete(employee.id)}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    Delete
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}
