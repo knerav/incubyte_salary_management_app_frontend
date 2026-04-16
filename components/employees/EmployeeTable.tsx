@@ -22,7 +22,7 @@ interface Props {
 export default function EmployeeTable({ employees, meta, onDelete }: Props) {
   if (employees.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-center">
+      <div className="flex flex-1 flex-col items-center justify-center text-center">
         <Users className="mb-4 h-12 w-12 text-muted-foreground" />
         <h3 className="text-lg font-semibold">No employees found</h3>
         <p className="mt-1 text-sm text-muted-foreground">

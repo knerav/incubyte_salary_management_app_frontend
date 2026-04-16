@@ -7,7 +7,12 @@ import {
   listJobTitles,
   listDepartments,
 } from "@/lib/api";
-import type { Department, HistoricalSalaryInsights, JobTitle, SalaryInsights } from "@/types";
+import type {
+  Department,
+  HistoricalSalaryInsights,
+  JobTitle,
+  SalaryInsights,
+} from "@/types";
 import type { InsightFilters } from "@/lib/api";
 import SalaryInsightsPanel from "@/components/insights/SalaryInsightsPanel";
 import SalaryHistoryChart from "@/components/insights/SalaryHistoryChart";
@@ -30,12 +35,16 @@ export default function InsightsPage() {
   const [filters, setFilters] = useState<InsightFilters>({});
 
   async function fetchInsights(f: InsightFilters = filters) {
-    const [ins, hist] = await Promise.all([
-      getSalaryInsights(f),
-      getHistoricalSalaryInsights(f),
-    ]);
-    setInsights(ins);
-    setHistory(hist);
+    try {
+      const [ins, hist] = await Promise.all([
+        getSalaryInsights(f),
+        getHistoricalSalaryInsights(f),
+      ]);
+      setInsights(ins);
+      setHistory(hist);
+    } catch {
+      // leave insights null so the empty state renders
+    }
   }
 
   useEffect(() => {
@@ -51,14 +60,16 @@ export default function InsightsPage() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-8 w-full">
+    <main className="mx-auto max-w-6xl px-6 py-8 w-full flex-1 flex flex-col">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Insights</h1>
         </div>
-        <div className="flex flex-wrap items-end gap-2">
+        <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-muted-foreground">Department</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              Department
+            </span>
             <Select
               value={filters.department_id?.toString() ?? ALL}
               onValueChange={(v) =>
@@ -67,7 +78,7 @@ export default function InsightsPage() {
                 })
               }
             >
-              <SelectTrigger aria-label="Department">
+              <SelectTrigger className="w-full" aria-label="Department">
                 <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
@@ -82,7 +93,9 @@ export default function InsightsPage() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-muted-foreground">Job Title</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              Job Title
+            </span>
             <Select
               value={filters.job_title_id?.toString() ?? ALL}
               onValueChange={(v) =>
@@ -91,7 +104,7 @@ export default function InsightsPage() {
                 })
               }
             >
-              <SelectTrigger aria-label="Job Title">
+              <SelectTrigger className="w-full" aria-label="Job Title">
                 <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
@@ -107,8 +120,8 @@ export default function InsightsPage() {
         </div>
       </div>
 
-      {insights && insights.insights.employee_count === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-center">
+      {!insights || insights.insights.employee_count === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center text-center">
           <BarChart3 className="mb-4 h-12 w-12 text-muted-foreground" />
           <h3 className="text-lg font-semibold">No data to display</h3>
           <p className="mt-1 text-sm text-muted-foreground">
