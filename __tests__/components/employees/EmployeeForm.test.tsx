@@ -56,19 +56,21 @@ describe("EmployeeForm", () => {
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
   });
 
-  it("renders a job title select with the provided options", () => {
+  it("renders a job title select with the provided options", async () => {
     renderForm();
-    const select = screen.getByRole("combobox", { name: /job title/i });
-    expect(select).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Engineer" })).toBeInTheDocument();
+    const trigger = screen.getByRole("combobox", { name: /job title/i });
+    expect(trigger).toBeInTheDocument();
+    await userEvent.click(trigger);
+    expect(await screen.findByRole("option", { name: "Engineer" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Designer" })).toBeInTheDocument();
   });
 
-  it("renders a department select with the provided options", () => {
+  it("renders a department select with the provided options", async () => {
     renderForm();
-    const select = screen.getByRole("combobox", { name: /department/i });
-    expect(select).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Engineering" })).toBeInTheDocument();
+    const trigger = screen.getByRole("combobox", { name: /department/i });
+    expect(trigger).toBeInTheDocument();
+    await userEvent.click(trigger);
+    expect(await screen.findByRole("option", { name: "Engineering" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Design" })).toBeInTheDocument();
   });
 
@@ -101,15 +103,20 @@ describe("EmployeeForm", () => {
     await userEvent.type(screen.getByLabelText(/first name/i), "Alice");
     await userEvent.type(screen.getByLabelText(/last name/i), "Brown");
     await userEvent.type(screen.getByLabelText(/email/i), "alice@example.com");
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: /job title/i }), "1");
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: /department/i }), "1");
+
+    await userEvent.click(screen.getByRole("combobox", { name: /job title/i }));
+    await userEvent.click(await screen.findByRole("option", { name: "Engineer" }));
+
+    await userEvent.click(screen.getByRole("combobox", { name: /department/i }));
+    await userEvent.click(await screen.findByRole("option", { name: "Engineering" }));
+
     await userEvent.type(screen.getByLabelText(/country/i), "US");
     await userEvent.type(screen.getByLabelText(/salary/i), "80000");
     await userEvent.type(screen.getByLabelText(/currency/i), "USD");
-    await userEvent.selectOptions(
-      screen.getByRole("combobox", { name: /employment type/i }),
-      "full_time"
-    );
+
+    await userEvent.click(screen.getByRole("combobox", { name: /employment type/i }));
+    await userEvent.click(await screen.findByRole("option", { name: /full time/i }));
+
     await userEvent.type(screen.getByLabelText(/hired on/i), "2023-01-01");
     await userEvent.click(screen.getByRole("button", { name: /save/i }));
 

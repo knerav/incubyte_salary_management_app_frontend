@@ -38,8 +38,15 @@ describe("NewEmployeePage", () => {
 
   it("renders the employee form with job titles and departments loaded", async () => {
     render(<NewEmployeePage />);
+    const jobTitleTrigger = await screen.findByRole("combobox", { name: /job title/i });
+    await userEvent.click(jobTitleTrigger);
     expect(await screen.findByRole("option", { name: "Engineer" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Engineering" })).toBeInTheDocument();
+    // close by pressing Escape
+    await userEvent.keyboard("{Escape}");
+
+    const departmentTrigger = screen.getByRole("combobox", { name: /department/i });
+    await userEvent.click(departmentTrigger);
+    expect(await screen.findByRole("option", { name: "Engineering" })).toBeInTheDocument();
   });
 
   it("calls createEmployee on form submit and redirects to /employees", async () => {
@@ -57,20 +64,25 @@ describe("NewEmployeePage", () => {
       hired_on: "2023-01-01",
     });
     render(<NewEmployeePage />);
-    await screen.findByRole("option", { name: "Engineer" });
+    await screen.findByRole("combobox", { name: /job title/i });
 
     await userEvent.type(screen.getByLabelText(/first name/i), "Alice");
     await userEvent.type(screen.getByLabelText(/last name/i), "Brown");
     await userEvent.type(screen.getByLabelText(/email/i), "alice@example.com");
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: /job title/i }), "1");
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: /department/i }), "1");
+
+    await userEvent.click(screen.getByRole("combobox", { name: /job title/i }));
+    await userEvent.click(await screen.findByRole("option", { name: "Engineer" }));
+
+    await userEvent.click(screen.getByRole("combobox", { name: /department/i }));
+    await userEvent.click(await screen.findByRole("option", { name: "Engineering" }));
+
     await userEvent.type(screen.getByLabelText(/country/i), "US");
     await userEvent.type(screen.getByLabelText(/salary/i), "80000");
     await userEvent.type(screen.getByLabelText(/currency/i), "USD");
-    await userEvent.selectOptions(
-      screen.getByRole("combobox", { name: /employment type/i }),
-      "full_time"
-    );
+
+    await userEvent.click(screen.getByRole("combobox", { name: /employment type/i }));
+    await userEvent.click(await screen.findByRole("option", { name: /full time/i }));
+
     await userEvent.type(screen.getByLabelText(/hired on/i), "2023-01-01");
     await userEvent.click(screen.getByRole("button", { name: /save/i }));
 
