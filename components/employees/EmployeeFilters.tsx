@@ -3,6 +3,14 @@
 import { useState } from "react";
 import type { Department, JobTitle } from "@/types";
 import type { EmployeeFilters as Filters } from "@/lib/api";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Props {
   filters: Filters;
@@ -10,6 +18,8 @@ interface Props {
   departments: Department[];
   onChange: (filters: Filters) => void;
 }
+
+const ALL = "all";
 
 export default function EmployeeFilters({
   filters,
@@ -26,75 +36,70 @@ export default function EmployeeFilters({
   }
 
   return (
-    <div className="flex flex-wrap gap-3">
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="sr-only">Search</span>
-        <input
-          role="searchbox"
-          type="search"
-          placeholder="Search employees…"
-          value={internal.q ?? ""}
-          onChange={(e) => update({ q: e.target.value })}
-          className="rounded border px-3 py-1.5 text-sm"
-        />
-      </label>
+    <div className="flex flex-wrap items-center gap-2">
+      <Input
+        role="searchbox"
+        type="search"
+        placeholder="Search employees…"
+        value={internal.q ?? ""}
+        onChange={(e) => update({ q: e.target.value })}
+        className="h-9 w-48"
+      />
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span>Employment Type</span>
-        <select
-          aria-label="Employment Type"
-          value={internal.employment_type ?? ""}
-          onChange={(e) => update({ employment_type: e.target.value || undefined })}
-          className="rounded border px-3 py-1.5 text-sm"
-        >
-          <option value="">All</option>
-          <option value="full_time">Full Time</option>
-          <option value="part_time">Part Time</option>
-          <option value="contract">Contract</option>
-        </select>
-      </label>
+      <Select
+        value={internal.employment_type ?? ALL}
+        onValueChange={(v) =>
+          update({ employment_type: v === ALL ? undefined : v })
+        }
+      >
+        <SelectTrigger aria-label="Employment Type">
+          <SelectValue placeholder="Employment Type" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={ALL}>All</SelectItem>
+          <SelectItem value="full_time">Full Time</SelectItem>
+          <SelectItem value="part_time">Part Time</SelectItem>
+          <SelectItem value="contract">Contract</SelectItem>
+        </SelectContent>
+      </Select>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span>Department</span>
-        <select
-          aria-label="Department"
-          value={internal.department_id ?? ""}
-          onChange={(e) =>
-            update({
-              department_id: e.target.value ? parseInt(e.target.value, 10) : undefined,
-            })
-          }
-          className="rounded border px-3 py-1.5 text-sm"
-        >
-          <option value="">All</option>
+      <Select
+        value={internal.department_id?.toString() ?? ALL}
+        onValueChange={(v) =>
+          update({ department_id: v === ALL ? undefined : parseInt(v, 10) })
+        }
+      >
+        <SelectTrigger aria-label="Department">
+          <SelectValue placeholder="Department" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={ALL}>All</SelectItem>
           {departments.map((d) => (
-            <option key={d.id} value={d.id}>
+            <SelectItem key={d.id} value={d.id.toString()}>
               {d.name}
-            </option>
+            </SelectItem>
           ))}
-        </select>
-      </label>
+        </SelectContent>
+      </Select>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span>Job Title</span>
-        <select
-          aria-label="Job Title"
-          value={internal.job_title_id ?? ""}
-          onChange={(e) =>
-            update({
-              job_title_id: e.target.value ? parseInt(e.target.value, 10) : undefined,
-            })
-          }
-          className="rounded border px-3 py-1.5 text-sm"
-        >
-          <option value="">All</option>
+      <Select
+        value={internal.job_title_id?.toString() ?? ALL}
+        onValueChange={(v) =>
+          update({ job_title_id: v === ALL ? undefined : parseInt(v, 10) })
+        }
+      >
+        <SelectTrigger aria-label="Job Title">
+          <SelectValue placeholder="Job Title" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={ALL}>All</SelectItem>
           {jobTitles.map((jt) => (
-            <option key={jt.id} value={jt.id}>
+            <SelectItem key={jt.id} value={jt.id.toString()}>
               {jt.name}
-            </option>
+            </SelectItem>
           ))}
-        </select>
-      </label>
+        </SelectContent>
+      </Select>
     </div>
   );
 }

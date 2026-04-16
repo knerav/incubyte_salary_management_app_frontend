@@ -1,7 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { Users } from "lucide-react";
 import type { Employee, PaginationMeta } from "@/types";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface Props {
   employees: Employee[];
@@ -12,49 +22,57 @@ interface Props {
 export default function EmployeeTable({ employees, meta, onDelete }: Props) {
   if (employees.length === 0) {
     return (
-      <p className="py-8 text-center text-gray-500">No employees found</p>
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <Users className="mb-4 h-12 w-12 text-muted-foreground" />
+        <h3 className="text-lg font-semibold">No employees found</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Try adjusting your filters or add a new employee.
+        </p>
+      </div>
     );
   }
 
   return (
     <div>
-      <p className="mb-2 text-sm text-gray-600">{meta.total} employees</p>
-      <table className="w-full border-collapse text-sm">
-        <thead>
-          <tr className="border-b text-left text-gray-500">
-            <th className="py-2 pr-4 font-medium">Name</th>
-            <th className="py-2 pr-4 font-medium">Job Title</th>
-            <th className="py-2 pr-4 font-medium">Department</th>
-            <th className="py-2 pr-4 font-medium">Country</th>
-            <th className="py-2 font-medium">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
+      <p className="mb-2 text-sm text-muted-foreground">{meta.total} employees</p>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Job Title</TableHead>
+            <TableHead>Department</TableHead>
+            <TableHead>Country</TableHead>
+            <TableHead />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {employees.map((employee) => (
-            <tr key={employee.id} className="border-b hover:bg-gray-50">
-              <td className="py-2 pr-4">
+            <TableRow key={employee.id}>
+              <TableCell>
                 <Link
                   href={`/employees/${employee.id}`}
-                  className="font-medium text-blue-600 hover:underline"
+                  className="font-medium hover:underline"
                 >
                   {employee.first_name} {employee.last_name}
                 </Link>
-              </td>
-              <td className="py-2 pr-4 text-gray-700">{employee.job_title}</td>
-              <td className="py-2 pr-4 text-gray-700">{employee.department}</td>
-              <td className="py-2 pr-4 text-gray-700">{employee.country}</td>
-              <td className="py-2">
-                <button
+              </TableCell>
+              <TableCell>{employee.job_title}</TableCell>
+              <TableCell>{employee.department}</TableCell>
+              <TableCell>{employee.country}</TableCell>
+              <TableCell>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => onDelete(employee.id)}
-                  className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
                   Delete
-                </button>
-              </td>
-            </tr>
+                </Button>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }
