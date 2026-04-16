@@ -39,6 +39,11 @@ describe("Navbar", () => {
       expect(screen.getByRole("link", { name: /insights/i })).toBeInTheDocument();
     });
 
+    it("renders a link to the settings page", () => {
+      renderNavbar();
+      expect(screen.getByRole("link", { name: /settings/i })).toBeInTheDocument();
+    });
+
     it("applies an active style to the current page link", () => {
       mockPathname.mockReturnValue("/insights");
       renderNavbar();
@@ -67,10 +72,13 @@ describe("Navbar", () => {
       expect(screen.queryByRole("button", { name: /user menu/i })).not.toBeInTheDocument();
     });
 
-    it("renders a link to the settings page in the dropdown", async () => {
+    it("does not render a standalone settings item in the dropdown (it is a nav link)", async () => {
       renderNavbar();
+      // Settings nav link exists in the document
+      expect(screen.getByRole("link", { name: /settings/i })).toBeInTheDocument();
+      // The dropdown only has sign out as an action item
       await openUserMenu();
-      expect(screen.getByRole("menuitem", { name: /settings/i })).toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: /sign out/i })).toBeInTheDocument();
     });
 
     it("renders a sign out item in the dropdown", async () => {

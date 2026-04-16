@@ -18,6 +18,7 @@ import {
 const NAV_LINKS = [
   { href: "/employees", label: "Employees" },
   { href: "/insights", label: "Insights" },
+  { href: "/settings", label: "Settings" },
 ];
 
 function NavLink({ href, label }: { href: string; label: string }) {
@@ -78,10 +79,6 @@ export default function Navbar() {
                 <DropdownMenuSeparator />
               </div>
 
-              <DropdownMenuItem asChild>
-                <Link href="/settings">Settings</Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={signOut}>
                 Sign out
               </DropdownMenuItem>
