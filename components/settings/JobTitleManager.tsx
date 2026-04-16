@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { JobTitle } from "@/types";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   jobTitles: JobTitle[];
@@ -41,19 +43,14 @@ export default function JobTitleManager({
       <h2 className="text-lg font-semibold">Job Titles</h2>
 
       <form onSubmit={handleCreate} className="flex gap-2">
-        <input
+        <Input
           type="text"
           placeholder="New job title"
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
-          className="flex-1 rounded border px-3 py-1.5 text-sm"
+          aria-label="New job title"
         />
-        <button
-          type="submit"
-          className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white"
-        >
-          Add
-        </button>
+        <Button type="submit" size="sm">Add</Button>
       </form>
 
       <ul className="divide-y">
@@ -61,40 +58,28 @@ export default function JobTitleManager({
           <li key={jt.id} className="flex items-center gap-2 py-2">
             {editingId === jt.id ? (
               <>
-                <input
+                <Input
                   type="text"
                   value={editingName}
                   onChange={(e) => setEditingName(e.target.value)}
-                  className="flex-1 rounded border px-3 py-1 text-sm"
+                  aria-label="Edit job title"
+                  className="flex-1"
                 />
-                <button
-                  onClick={() => handleSave(jt.id)}
-                  className="rounded bg-green-600 px-3 py-1 text-xs font-medium text-white"
-                >
-                  Save
-                </button>
-                <button
-                  onClick={() => setEditingId(null)}
-                  className="rounded border px-3 py-1 text-xs font-medium"
-                >
-                  Cancel
-                </button>
+                <Button size="sm" onClick={() => handleSave(jt.id)}>Save</Button>
+                <Button size="sm" variant="outline" onClick={() => setEditingId(null)}>Cancel</Button>
               </>
             ) : (
               <>
                 <span className="flex-1 text-sm">{jt.name}</span>
-                <button
-                  onClick={() => startEdit(jt)}
-                  className="rounded border px-2 py-1 text-xs"
-                >
-                  Edit
-                </button>
-                <button
+                <Button size="sm" variant="outline" onClick={() => startEdit(jt)}>Edit</Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
                   onClick={() => onDelete(jt.id)}
-                  className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50"
                 >
                   Delete
-                </button>
+                </Button>
               </>
             )}
           </li>

@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { Department } from "@/types";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   departments: Department[];
@@ -41,19 +43,14 @@ export default function DepartmentManager({
       <h2 className="text-lg font-semibold">Departments</h2>
 
       <form onSubmit={handleCreate} className="flex gap-2">
-        <input
+        <Input
           type="text"
           placeholder="New department"
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
-          className="flex-1 rounded border px-3 py-1.5 text-sm"
+          aria-label="New department"
         />
-        <button
-          type="submit"
-          className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white"
-        >
-          Add
-        </button>
+        <Button type="submit" size="sm">Add</Button>
       </form>
 
       <ul className="divide-y">
@@ -61,40 +58,28 @@ export default function DepartmentManager({
           <li key={dept.id} className="flex items-center gap-2 py-2">
             {editingId === dept.id ? (
               <>
-                <input
+                <Input
                   type="text"
                   value={editingName}
                   onChange={(e) => setEditingName(e.target.value)}
-                  className="flex-1 rounded border px-3 py-1 text-sm"
+                  aria-label="Edit department"
+                  className="flex-1"
                 />
-                <button
-                  onClick={() => handleSave(dept.id)}
-                  className="rounded bg-green-600 px-3 py-1 text-xs font-medium text-white"
-                >
-                  Save
-                </button>
-                <button
-                  onClick={() => setEditingId(null)}
-                  className="rounded border px-3 py-1 text-xs font-medium"
-                >
-                  Cancel
-                </button>
+                <Button size="sm" onClick={() => handleSave(dept.id)}>Save</Button>
+                <Button size="sm" variant="outline" onClick={() => setEditingId(null)}>Cancel</Button>
               </>
             ) : (
               <>
                 <span className="flex-1 text-sm">{dept.name}</span>
-                <button
-                  onClick={() => startEdit(dept)}
-                  className="rounded border px-2 py-1 text-xs"
-                >
-                  Edit
-                </button>
-                <button
+                <Button size="sm" variant="outline" onClick={() => startEdit(dept)}>Edit</Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
                   onClick={() => onDelete(dept.id)}
-                  className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50"
                 >
                   Delete
-                </button>
+                </Button>
               </>
             )}
           </li>

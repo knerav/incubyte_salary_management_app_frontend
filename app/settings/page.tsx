@@ -65,10 +65,10 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <main className="mx-auto max-w-6xl px-6 py-8 w-full">
       <h1 className="mb-8 text-2xl font-bold">Settings</h1>
 
-      <div className="space-y-10">
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         <JobTitleManager
           jobTitles={jobTitles}
           onCreate={handleCreateJobTitle}
