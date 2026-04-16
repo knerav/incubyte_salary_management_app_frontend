@@ -1,33 +1,97 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { CircleUser } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const NAV_LINKS = [
+  { href: "/employees", label: "Employees" },
+  { href: "/insights", label: "Insights" },
+];
+
+function NavLink({ href, label }: { href: string; label: string }) {
+  const pathname = usePathname();
+  const isActive = pathname === href || pathname.startsWith(href + "/");
+
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "text-sm font-medium px-3 py-1.5 rounded-md transition-colors",
+        isActive
+          ? "bg-accent text-accent-foreground"
+          : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+      )}
+    >
+      {label}
+    </Link>
+  );
+}
 
 export default function Navbar() {
   const { token, signOut } = useAuth();
 
   return (
-    <nav className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
-      <div className="flex items-center gap-6">
-        <span className="font-semibold text-gray-900">Salary Manager</span>
-        <Link href="/employees" className="text-sm text-gray-600 hover:text-gray-900">
-          Employees
+    <nav className="border-b bg-background">
+      <div className="mx-auto max-w-6xl flex h-14 items-center justify-between px-6">
+
+        {/* Left: brand */}
+        <Link href="/" className="text-sm font-semibold tracking-tight">
+          Salary Manager
         </Link>
-        <Link href="/insights" className="text-sm text-gray-600 hover:text-gray-900">
-          Insights
-        </Link>
-        <Link href="/settings" className="text-sm text-gray-600 hover:text-gray-900">
-          Settings
-        </Link>
+
+        {/* Center: nav links — desktop only */}
+        <div className="hidden md:flex items-center gap-1">
+          {NAV_LINKS.map((link) => (
+            <NavLink key={link.href} href={link.href} label={link.label} />
+          ))}
+        </div>
+
+        {/* Right: user dropdown */}
+        {token ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon-sm" aria-label="User menu">
+                <CircleUser className="size-6" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+
+              {/* Mobile-only nav links */}
+              <div className="md:hidden">
+                {NAV_LINKS.map((link) => (
+                  <DropdownMenuItem key={link.href} asChild>
+                    <Link href={link.href}>{link.label}</Link>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+              </div>
+
+              <DropdownMenuItem asChild>
+                <Link href="/settings">Settings</Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut}>
+                Sign out
+              </DropdownMenuItem>
+
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <div className="w-9" />
+        )}
+
       </div>
-      {token && (
-        <button
-          onClick={signOut}
-          className="text-sm text-gray-600 hover:text-gray-900"
-        >
-          Sign out
-        </button>
-      )}
     </nav>
   );
 }
