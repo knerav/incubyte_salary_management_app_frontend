@@ -2,6 +2,15 @@
 
 import { useState } from "react";
 import type { Department, Employee, EmployeeFormData, JobTitle } from "@/types";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Props {
   jobTitles: JobTitle[];
@@ -23,18 +32,7 @@ export default function EmployeeForm({
     ? departments.find((d) => d.name === employee.department)
     : undefined;
 
-  const [formData, setFormData] = useState<{
-    first_name: string;
-    last_name: string;
-    email: string;
-    job_title_id: string;
-    department_id: string;
-    country: string;
-    salary: string;
-    currency: string;
-    employment_type: string;
-    hired_on: string;
-  }>({
+  const [formData, setFormData] = useState({
     first_name: employee?.first_name ?? "",
     last_name: employee?.last_name ?? "",
     email: employee?.email ?? "",
@@ -75,11 +73,19 @@ export default function EmployeeForm({
     }
   }
 
-  function field(name: keyof typeof formData) {
+  function textField(name: keyof typeof formData) {
     return {
       value: formData[name],
-      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
         setFormData((prev) => ({ ...prev, [name]: e.target.value })),
+    };
+  }
+
+  function selectField(name: keyof typeof formData) {
+    return {
+      value: formData[name] || undefined,
+      onValueChange: (v: string) =>
+        setFormData((prev) => ({ ...prev, [name]: v })),
     };
   }
 
@@ -88,7 +94,10 @@ export default function EmployeeForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {allErrors.length > 0 && (
-        <ul role="alert" className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+        <ul
+          role="alert"
+          className="rounded border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
+        >
           {allErrors.map((msg, i) => (
             <li key={i}>{msg}</li>
           ))}
@@ -97,133 +106,94 @@ export default function EmployeeForm({
 
       <div className="grid grid-cols-2 gap-4">
         <label className="flex flex-col gap-1 text-sm">
-          <span>First Name</span>
-          <input
-            aria-label="First Name"
-            type="text"
-            className="rounded border px-3 py-1.5"
-            {...field("first_name")}
-          />
+          <span className="font-medium">First Name</span>
+          <Input aria-label="First Name" type="text" {...textField("first_name")} />
         </label>
 
         <label className="flex flex-col gap-1 text-sm">
-          <span>Last Name</span>
-          <input
-            aria-label="Last Name"
-            type="text"
-            className="rounded border px-3 py-1.5"
-            {...field("last_name")}
-          />
+          <span className="font-medium">Last Name</span>
+          <Input aria-label="Last Name" type="text" {...textField("last_name")} />
         </label>
       </div>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span>Email</span>
-        <input
-          aria-label="Email"
-          type="email"
-          className="rounded border px-3 py-1.5"
-          {...field("email")}
-        />
+        <span className="font-medium">Email</span>
+        <Input aria-label="Email" type="email" {...textField("email")} />
+      </label>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-1 text-sm">
+          <span className="font-medium">Job Title</span>
+          <Select {...selectField("job_title_id")}>
+            <SelectTrigger aria-label="Job Title">
+              <SelectValue placeholder="Select…" />
+            </SelectTrigger>
+            <SelectContent>
+              {jobTitles.map((jt) => (
+                <SelectItem key={jt.id} value={String(jt.id)}>
+                  {jt.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-1 text-sm">
+          <span className="font-medium">Department</span>
+          <Select {...selectField("department_id")}>
+            <SelectTrigger aria-label="Department">
+              <SelectValue placeholder="Select…" />
+            </SelectTrigger>
+            <SelectContent>
+              {departments.map((d) => (
+                <SelectItem key={d.id} value={String(d.id)}>
+                  {d.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="font-medium">Country</span>
+        <Input aria-label="Country" type="text" {...textField("country")} />
       </label>
 
       <div className="grid grid-cols-2 gap-4">
         <label className="flex flex-col gap-1 text-sm">
-          <span>Job Title</span>
-          <select
-            aria-label="Job Title"
-            className="rounded border px-3 py-1.5"
-            {...field("job_title_id")}
-          >
-            <option value="">Select…</option>
-            {jobTitles.map((jt) => (
-              <option key={jt.id} value={jt.id}>
-                {jt.name}
-              </option>
-            ))}
-          </select>
+          <span className="font-medium">Salary</span>
+          <Input aria-label="Salary" type="text" {...textField("salary")} />
         </label>
 
         <label className="flex flex-col gap-1 text-sm">
-          <span>Department</span>
-          <select
-            aria-label="Department"
-            className="rounded border px-3 py-1.5"
-            {...field("department_id")}
-          >
-            <option value="">Select…</option>
-            {departments.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
+          <span className="font-medium">Currency</span>
+          <Input aria-label="Currency" type="text" {...textField("currency")} />
         </label>
       </div>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span>Country</span>
-        <input
-          aria-label="Country"
-          type="text"
-          className="rounded border px-3 py-1.5"
-          {...field("country")}
-        />
-      </label>
-
-      <div className="grid grid-cols-2 gap-4">
-        <label className="flex flex-col gap-1 text-sm">
-          <span>Salary</span>
-          <input
-            aria-label="Salary"
-            type="text"
-            className="rounded border px-3 py-1.5"
-            {...field("salary")}
-          />
-        </label>
-
-        <label className="flex flex-col gap-1 text-sm">
-          <span>Currency</span>
-          <input
-            aria-label="Currency"
-            type="text"
-            className="rounded border px-3 py-1.5"
-            {...field("currency")}
-          />
-        </label>
+      <div className="flex flex-col gap-1 text-sm">
+        <span className="font-medium">Employment Type</span>
+        <Select {...selectField("employment_type")}>
+          <SelectTrigger aria-label="Employment Type">
+            <SelectValue placeholder="Select…" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="full_time">Full Time</SelectItem>
+            <SelectItem value="part_time">Part Time</SelectItem>
+            <SelectItem value="contract">Contract</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span>Employment Type</span>
-        <select
-          aria-label="Employment Type"
-          className="rounded border px-3 py-1.5"
-          {...field("employment_type")}
-        >
-          <option value="">Select…</option>
-          <option value="full_time">Full Time</option>
-          <option value="part_time">Part Time</option>
-          <option value="contract">Contract</option>
-        </select>
+        <span className="font-medium">Hired On</span>
+        <Input aria-label="Hired On" type="date" {...textField("hired_on")} />
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span>Hired On</span>
-        <input
-          aria-label="Hired On"
-          type="date"
-          className="rounded border px-3 py-1.5"
-          {...field("hired_on")}
-        />
-      </label>
-
-      <button
-        type="submit"
-        disabled={submitting}
-        className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-      >
+      <Button type="submit" disabled={submitting}>
         {submitting ? "Saving…" : "Save"}
-      </button>
+      </Button>
     </form>
   );
 }
