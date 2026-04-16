@@ -42,19 +42,17 @@ describe("EmployeeFilters", () => {
     expect(screen.getByRole("combobox", { name: /employment type/i })).toBeInTheDocument();
   });
 
-  it("renders a department select with the provided departments", () => {
+  it("renders a department select with the provided departments", async () => {
     renderFilters();
-    const departmentSelect = screen.getByRole("combobox", { name: /department/i });
-    expect(departmentSelect).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Engineering" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("combobox", { name: /department/i }));
+    expect(await screen.findByRole("option", { name: "Engineering" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Design" })).toBeInTheDocument();
   });
 
-  it("renders a job title select with the provided job titles", () => {
+  it("renders a job title select with the provided job titles", async () => {
     renderFilters();
-    const jobTitleSelect = screen.getByRole("combobox", { name: /job title/i });
-    expect(jobTitleSelect).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Engineer" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("combobox", { name: /job title/i }));
+    expect(await screen.findByRole("option", { name: "Engineer" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Designer" })).toBeInTheDocument();
   });
 
@@ -68,10 +66,8 @@ describe("EmployeeFilters", () => {
 
   it("calls onChange with updated employment_type when select changes", async () => {
     renderFilters();
-    await userEvent.selectOptions(
-      screen.getByRole("combobox", { name: /employment type/i }),
-      "full_time"
-    );
+    await userEvent.click(screen.getByRole("combobox", { name: /employment type/i }));
+    await userEvent.click(await screen.findByRole("option", { name: /full time/i }));
     expect(mockOnChange).toHaveBeenCalledWith(
       expect.objectContaining({ employment_type: "full_time" })
     );
@@ -79,10 +75,8 @@ describe("EmployeeFilters", () => {
 
   it("calls onChange with updated department_id when department changes", async () => {
     renderFilters();
-    await userEvent.selectOptions(
-      screen.getByRole("combobox", { name: /department/i }),
-      "1"
-    );
+    await userEvent.click(screen.getByRole("combobox", { name: /department/i }));
+    await userEvent.click(await screen.findByRole("option", { name: "Engineering" }));
     expect(mockOnChange).toHaveBeenCalledWith(
       expect.objectContaining({ department_id: 1 })
     );
@@ -90,12 +84,10 @@ describe("EmployeeFilters", () => {
 
   it("calls onChange with updated job_title_id when job title changes", async () => {
     renderFilters();
-    await userEvent.selectOptions(
-      screen.getByRole("combobox", { name: /job title/i }),
-      "2"
-    );
+    await userEvent.click(screen.getByRole("combobox", { name: /job title/i }));
+    await userEvent.click(await screen.findByRole("option", { name: "Engineer" }));
     expect(mockOnChange).toHaveBeenCalledWith(
-      expect.objectContaining({ job_title_id: 2 })
+      expect.objectContaining({ job_title_id: 1 })
     );
   });
 
@@ -104,6 +96,6 @@ describe("EmployeeFilters", () => {
       filters: { q: "Alice", employment_type: "part_time" },
     });
     expect(screen.getByRole("searchbox")).toHaveValue("Alice");
-    expect(screen.getByRole("combobox", { name: /employment type/i })).toHaveValue("part_time");
+    expect(screen.getByRole("combobox", { name: /employment type/i })).toHaveTextContent("Part Time");
   });
 });

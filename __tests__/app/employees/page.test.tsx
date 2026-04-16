@@ -1,13 +1,14 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import EmployeesPage from "@/app/employees/page";
-import type { EmployeeListResponse, JobTitle, Department } from "@/types";
+import type { Employee, EmployeeListResponse, JobTitle, Department } from "@/types";
 
 jest.mock("@/lib/api", () => ({
   listEmployees: jest.fn(),
   listJobTitles: jest.fn(),
   listDepartments: jest.fn(),
   deleteEmployee: jest.fn(),
+  createEmployee: jest.fn(),
 }));
 
 jest.mock("next/navigation", () => ({
@@ -21,29 +22,31 @@ import {
   listJobTitles,
   listDepartments,
   deleteEmployee,
+  createEmployee,
 } from "@/lib/api";
 
 const mockListEmployees = listEmployees as jest.MockedFunction<typeof listEmployees>;
 const mockListJobTitles = listJobTitles as jest.MockedFunction<typeof listJobTitles>;
 const mockListDepartments = listDepartments as jest.MockedFunction<typeof listDepartments>;
 const mockDeleteEmployee = deleteEmployee as jest.MockedFunction<typeof deleteEmployee>;
+const mockCreateEmployee = createEmployee as jest.MockedFunction<typeof createEmployee>;
+
+const mockEmployee: Employee = {
+  id: 1,
+  first_name: "Jane",
+  last_name: "Smith",
+  email: "jane@example.com",
+  job_title: "Engineer",
+  department: "Engineering",
+  country: "US",
+  salary: "90000.00",
+  currency: "USD",
+  employment_type: "full_time",
+  hired_on: "2022-01-01",
+};
 
 const mockResponse: EmployeeListResponse = {
-  employees: [
-    {
-      id: 1,
-      first_name: "Jane",
-      last_name: "Smith",
-      email: "jane@example.com",
-      job_title: "Engineer",
-      department: "Engineering",
-      country: "US",
-      salary: "90000.00",
-      currency: "USD",
-      employment_type: "full_time",
-      hired_on: "2022-01-01",
-    },
-  ],
+  employees: [mockEmployee],
   meta: { total: 1, page: 1, per_page: 25, total_pages: 1 },
 };
 
@@ -68,12 +71,9 @@ describe("EmployeesPage", () => {
     expect(await screen.findByText("Jane Smith")).toBeInTheDocument();
   });
 
-  it("renders a link to add a new employee", async () => {
+  it("renders an add employee button", async () => {
     render(<EmployeesPage />);
-    expect(await screen.findByRole("link", { name: /add employee/i })).toHaveAttribute(
-      "href",
-      "/employees/new"
-    );
+    expect(await screen.findByRole("button", { name: /add employee/i })).toBeInTheDocument();
   });
 
   it("calls listEmployees on mount", async () => {
@@ -93,6 +93,54 @@ describe("EmployeesPage", () => {
 
     await waitFor(() => {
       expect(mockListEmployees).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("add employee dialog", () => {
+    it("opens the dialog when the add employee button is clicked", async () => {
+      render(<EmployeesPage />);
+      await userEvent.click(await screen.findByRole("button", { name: /add employee/i }));
+      expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    });
+
+    it("shows a success message after an employee is created", async () => {
+      mockCreateEmployee.mockResolvedValue(mockEmployee);
+      render(<EmployeesPage />);
+      await userEvent.click(await screen.findByRole("button", { name: /add employee/i }));
+      await screen.findByRole("dialog");
+      await userEvent.click(screen.getByRole("button", { name: /save/i }));
+      expect(await screen.findByText(/employee added/i)).toBeInTheDocument();
+    });
+
+    it("shows an error message when employee creation fails unexpectedly", async () => {
+      mockCreateEmployee.mockRejectedValue(new Error("Server error"));
+      render(<EmployeesPage />);
+      await userEvent.click(await screen.findByRole("button", { name: /add employee/i }));
+      await screen.findByRole("dialog");
+      await userEvent.click(screen.getByRole("button", { name: /save/i }));
+      expect(await screen.findByText(/something went wrong/i)).toBeInTheDocument();
+    });
+
+    it("closes the dialog when done is clicked after a successful creation", async () => {
+      mockCreateEmployee.mockResolvedValue(mockEmployee);
+      render(<EmployeesPage />);
+      await userEvent.click(await screen.findByRole("button", { name: /add employee/i }));
+      await screen.findByRole("dialog");
+      await userEvent.click(screen.getByRole("button", { name: /save/i }));
+      await userEvent.click(await screen.findByRole("button", { name: /done/i }));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("refetches employees after a successful creation", async () => {
+      mockCreateEmployee.mockResolvedValue(mockEmployee);
+      render(<EmployeesPage />);
+      await userEvent.click(await screen.findByRole("button", { name: /add employee/i }));
+      await screen.findByRole("dialog");
+      await userEvent.click(screen.getByRole("button", { name: /save/i }));
+      await screen.findByText(/employee added/i);
+      await waitFor(() => {
+        expect(mockListEmployees).toHaveBeenCalledTimes(2);
+      });
     });
   });
 });
