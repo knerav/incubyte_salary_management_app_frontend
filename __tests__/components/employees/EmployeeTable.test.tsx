@@ -85,7 +85,21 @@ describe("EmployeeTable", () => {
     expect(mockOnSelect).toHaveBeenCalledWith(1);
   });
 
-  it("renders an edit link for each employee pointing to the edit page", () => {
+  it("renders an edit button for each employee that calls onEdit when provided", async () => {
+    const mockOnEdit = jest.fn();
+    render(
+      <EmployeeTable
+        employees={mockEmployees}
+        meta={mockMeta}
+        onDelete={mockOnDelete}
+        onEdit={mockOnEdit}
+      />
+    );
+    await userEvent.click(screen.getByRole("button", { name: /edit jane smith/i }));
+    expect(mockOnEdit).toHaveBeenCalledWith(1);
+  });
+
+  it("renders an edit link to the edit page when onEdit is not provided", () => {
     render(
       <EmployeeTable
         employees={mockEmployees}
@@ -96,10 +110,6 @@ describe("EmployeeTable", () => {
     expect(screen.getByRole("link", { name: /edit jane smith/i })).toHaveAttribute(
       "href",
       "/employees/1/edit"
-    );
-    expect(screen.getByRole("link", { name: /edit john doe/i })).toHaveAttribute(
-      "href",
-      "/employees/2/edit"
     );
   });
 

@@ -8,6 +8,7 @@ import {
   deleteEmployee,
   createEmployee,
   getEmployee,
+  updateEmployee,
 } from "@/lib/api";
 import type { Department, Employee, EmployeeFormData, JobTitle, PaginationMeta } from "@/types";
 import type { EmployeeFilters } from "@/lib/api";
@@ -35,7 +36,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { CheckCircle2, Plus, XCircle } from "lucide-react";
-import Link from "next/link";
 
 type AddDialogView = "form" | "success" | "error";
 
@@ -55,6 +55,7 @@ export default function EmployeesPage() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addDialogView, setAddDialogView] = useState<AddDialogView>("form");
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
   async function fetchEmployees(f: EmployeeFilters = filters) {
     const data = await listEmployees(f);
@@ -98,6 +99,19 @@ export default function EmployeesPage() {
     setSelectedEmployee(emp);
   }
 
+  async function handleEditEmployee(id: number) {
+    const emp = await getEmployee(id);
+    setEditingEmployee(emp);
+  }
+
+  async function handleUpdateEmployee(data: EmployeeFormData) {
+    if (!editingEmployee) return;
+    const { salary: _salary, currency: _currency, ...rest } = data;
+    await updateEmployee(editingEmployee.id, rest);
+    setEditingEmployee(null);
+    await fetchEmployees();
+  }
+
   async function handleConfirmDelete() {
     if (pendingDeleteId == null) return;
     setDeleting(true);
@@ -134,6 +148,7 @@ export default function EmployeesPage() {
         meta={meta}
         onDelete={(id) => setPendingDeleteId(id)}
         onSelect={handleSelectEmployee}
+        onEdit={handleEditEmployee}
       />
 
       <Pagination
@@ -169,10 +184,36 @@ export default function EmployeesPage() {
               ))}
             </dl>
             <DialogFooter>
-              <Button variant="outline" asChild>
-                <Link href={`/employees/${selectedEmployee.id}/edit`}>Edit</Link>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSelectedEmployee(null);
+                  setEditingEmployee(selectedEmployee);
+                }}
+              >
+                Edit
               </Button>
             </DialogFooter>
+          </DialogContent>
+        )}
+      </Dialog>
+
+      {/* Edit Employee Dialog */}
+      <Dialog open={editingEmployee != null} onOpenChange={(open) => { if (!open) setEditingEmployee(null); }}>
+        {editingEmployee && (
+          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Employee</DialogTitle>
+              <DialogDescription>
+                Update the details for {editingEmployee.first_name} {editingEmployee.last_name}.
+              </DialogDescription>
+            </DialogHeader>
+            <EmployeeForm
+              jobTitles={jobTitles}
+              departments={departments}
+              employee={editingEmployee}
+              onSubmit={handleUpdateEmployee}
+            />
           </DialogContent>
         )}
       </Dialog>

@@ -18,9 +18,10 @@ interface Props {
   meta: PaginationMeta;
   onDelete: (id: number) => void;
   onSelect?: (id: number) => void;
+  onEdit?: (id: number) => void;
 }
 
-export default function EmployeeTable({ employees, meta, onDelete, onSelect }: Props) {
+export default function EmployeeTable({ employees, meta, onDelete, onSelect, onEdit }: Props) {
   if (employees.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center text-center">
@@ -71,14 +72,25 @@ export default function EmployeeTable({ employees, meta, onDelete, onSelect }: P
               <TableCell>{employee.country}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link
-                      href={`/employees/${employee.id}/edit`}
+                  {onEdit ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       aria-label={`Edit ${employee.first_name} ${employee.last_name}`}
+                      onClick={() => onEdit(employee.id)}
                     >
                       Edit
-                    </Link>
-                  </Button>
+                    </Button>
+                  ) : (
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link
+                        href={`/employees/${employee.id}/edit`}
+                        aria-label={`Edit ${employee.first_name} ${employee.last_name}`}
+                      >
+                        Edit
+                      </Link>
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"

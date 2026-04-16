@@ -10,6 +10,7 @@ jest.mock("@/lib/api", () => ({
   deleteEmployee: jest.fn(),
   createEmployee: jest.fn(),
   getEmployee: jest.fn(),
+  updateEmployee: jest.fn(),
 }));
 
 jest.mock("next/navigation", () => ({
@@ -25,6 +26,7 @@ import {
   deleteEmployee,
   createEmployee,
   getEmployee,
+  updateEmployee,
 } from "@/lib/api";
 
 const mockListEmployees = listEmployees as jest.MockedFunction<typeof listEmployees>;
@@ -33,6 +35,7 @@ const mockListDepartments = listDepartments as jest.MockedFunction<typeof listDe
 const mockDeleteEmployee = deleteEmployee as jest.MockedFunction<typeof deleteEmployee>;
 const mockCreateEmployee = createEmployee as jest.MockedFunction<typeof createEmployee>;
 const mockGetEmployee = getEmployee as jest.MockedFunction<typeof getEmployee>;
+const mockUpdateEmployee = updateEmployee as jest.MockedFunction<typeof updateEmployee>;
 
 const mockEmployee: Employee = {
   id: 1,
@@ -62,6 +65,7 @@ beforeEach(() => {
   mockListJobTitles.mockResolvedValue(mockJobTitles);
   mockListDepartments.mockResolvedValue(mockDepartments);
   mockGetEmployee.mockResolvedValue(mockEmployee);
+  mockUpdateEmployee.mockResolvedValue(mockEmployee);
 });
 
 describe("EmployeesPage", () => {
@@ -114,6 +118,39 @@ describe("EmployeesPage", () => {
       await screen.findByRole("dialog");
       await userEvent.click(screen.getByRole("button", { name: /close/i }));
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("edit employee modal", () => {
+    it("opens an edit form modal when the edit button is clicked on a row", async () => {
+      render(<EmployeesPage />);
+      await screen.findByText("Jane Smith");
+      await userEvent.click(screen.getByRole("button", { name: /edit jane smith/i }));
+      expect(await screen.findByRole("dialog")).toBeInTheDocument();
+      expect(screen.getByLabelText(/first name/i)).toHaveValue("Jane");
+    });
+
+    it("calls updateEmployee and refetches on successful edit submission", async () => {
+      render(<EmployeesPage />);
+      await screen.findByText("Jane Smith");
+      await userEvent.click(screen.getByRole("button", { name: /edit jane smith/i }));
+      await screen.findByRole("dialog");
+      await userEvent.click(screen.getByRole("button", { name: /save/i }));
+      await waitFor(() => {
+        expect(mockUpdateEmployee).toHaveBeenCalledTimes(1);
+        expect(mockListEmployees).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it("closes the edit modal after a successful save", async () => {
+      render(<EmployeesPage />);
+      await screen.findByText("Jane Smith");
+      await userEvent.click(screen.getByRole("button", { name: /edit jane smith/i }));
+      await screen.findByRole("dialog");
+      await userEvent.click(screen.getByRole("button", { name: /save/i }));
+      await waitFor(() => {
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      });
     });
   });
 
