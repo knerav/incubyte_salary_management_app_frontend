@@ -39,6 +39,17 @@ const mockInsights: SalaryInsights = {
   },
 };
 
+const emptyInsights: SalaryInsights = {
+  filters: {},
+  insights: {
+    employee_count: 0,
+    min_salary: "0.00",
+    max_salary: "0.00",
+    avg_salary: "0.00",
+    breakdowns: [],
+  },
+};
+
 const mockHistory: HistoricalSalaryInsights = {
   filters: {},
   group_by: "month",
@@ -85,14 +96,18 @@ describe("InsightsPage", () => {
     expect(await screen.findByRole("combobox", { name: /job title/i })).toBeInTheDocument();
   });
 
+  it("shows an empty state when no employees match the current filters", async () => {
+    mockGetSalaryInsights.mockResolvedValue(emptyInsights);
+    render(<InsightsPage />);
+    expect(await screen.findByText(/no data to display/i)).toBeInTheDocument();
+  });
+
   it("refetches insights when a filter changes", async () => {
     render(<InsightsPage />);
     await screen.findByRole("combobox", { name: /department/i });
 
-    await userEvent.selectOptions(
-      screen.getByRole("combobox", { name: /department/i }),
-      "1"
-    );
+    await userEvent.click(screen.getByRole("combobox", { name: /department/i }));
+    await userEvent.click(await screen.findByRole("option", { name: "Engineering" }));
 
     await waitFor(() => {
       expect(mockGetSalaryInsights).toHaveBeenCalledTimes(2);
