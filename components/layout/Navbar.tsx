@@ -32,7 +32,7 @@ function NavLink({ href, label }: { href: string; label: string }) {
         "text-sm font-medium px-3 py-1.5 rounded-md transition-colors",
         isActive
           ? "bg-accent text-accent-foreground"
-          : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+          : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
       )}
     >
       {label}
@@ -46,10 +46,16 @@ export default function Navbar() {
   return (
     <nav className="border-b bg-background">
       <div className="mx-auto max-w-6xl flex h-14 items-center justify-between px-6">
-
         {/* Left: brand */}
         <Link href="/">
-          <Image src="/hrpulse_logo.png" alt="HR Pulse" height={32} width={120} className="h-40 w-auto object-contain" unoptimized />
+          <Image
+            src="/hrpulse_logo.png"
+            alt="HR Pulse"
+            height={32}
+            width={120}
+            className="h-6 w-auto object-contain"
+            unoptimized
+          />
         </Link>
 
         {/* Center: nav links — desktop only */}
@@ -68,7 +74,6 @@ export default function Navbar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
-
               {/* Mobile-only nav links */}
               <div className="md:hidden">
                 {NAV_LINKS.map((link) => (
@@ -79,16 +84,12 @@ export default function Navbar() {
                 <DropdownMenuSeparator />
               </div>
 
-              <DropdownMenuItem onClick={signOut}>
-                Sign out
-              </DropdownMenuItem>
-
+              <DropdownMenuItem onClick={signOut}>Sign out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
           <div className="w-9" />
         )}
-
       </div>
     </nav>
   );
