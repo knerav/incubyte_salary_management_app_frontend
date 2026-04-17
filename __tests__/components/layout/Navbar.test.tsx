@@ -1,13 +1,15 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Navbar from "@/components/layout/Navbar";
 import { AuthContext } from "@/contexts/AuthContext";
 
 const mockSignOut = jest.fn();
+const mockPush = jest.fn();
 const mockPathname = jest.fn(() => "/employees");
 
 jest.mock("next/navigation", () => ({
   usePathname: () => mockPathname(),
+  useRouter: () => ({ push: mockPush }),
 }));
 
 function renderNavbar(token: string | null = "Bearer mock.token") {
@@ -25,6 +27,7 @@ async function openUserMenu() {
 beforeEach(() => {
   jest.clearAllMocks();
   mockPathname.mockReturnValue("/employees");
+  mockSignOut.mockResolvedValue(undefined);
 });
 
 describe("Navbar", () => {
@@ -92,6 +95,23 @@ describe("Navbar", () => {
       await openUserMenu();
       await userEvent.click(screen.getByRole("menuitem", { name: /sign out/i }));
       expect(mockSignOut).toHaveBeenCalledTimes(1);
+    });
+
+    it("redirects to /sign-in after sign out completes", async () => {
+      renderNavbar();
+      await openUserMenu();
+      await userEvent.click(screen.getByRole("menuitem", { name: /sign out/i }));
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith("/sign-in");
+      });
+    });
+  });
+
+  describe("sign-in page", () => {
+    it("does not render on the sign-in page", () => {
+      mockPathname.mockReturnValue("/sign-in");
+      renderNavbar();
+      expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
     });
   });
 });
