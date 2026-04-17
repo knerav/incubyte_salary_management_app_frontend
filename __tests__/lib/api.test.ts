@@ -1,6 +1,13 @@
-jest.mock("@/lib/auth");
+jest.mock("@/lib/auth", () => ({
+  getToken: jest.fn(),
+  setToken: jest.fn(),
+  clearToken: jest.fn(),
+  getRefreshToken: jest.fn(),
+  setRefreshToken: jest.fn(),
+  clearRefreshToken: jest.fn(),
+}));
 
-import { getToken, setToken, clearToken } from "@/lib/auth";
+import { getToken, setToken, clearToken, getRefreshToken, setRefreshToken, clearRefreshToken } from "@/lib/auth";
 import {
   signIn,
   signOut,
@@ -43,12 +50,18 @@ const mockEmployee = {
 const mockGetToken = getToken as jest.MockedFunction<typeof getToken>;
 const mockSetToken = setToken as jest.MockedFunction<typeof setToken>;
 const mockClearToken = clearToken as jest.MockedFunction<typeof clearToken>;
+const mockGetRefreshToken = getRefreshToken as jest.MockedFunction<typeof getRefreshToken>;
+const mockSetRefreshToken = setRefreshToken as jest.MockedFunction<typeof setRefreshToken>;
+const mockClearRefreshToken = clearRefreshToken as jest.MockedFunction<typeof clearRefreshToken>;
 
 beforeEach(() => {
   jest.clearAllMocks();
   mockGetToken.mockReturnValue("Bearer mock.jwt.token");
   mockSetToken.mockImplementation(() => {});
   mockClearToken.mockImplementation(() => {});
+  mockGetRefreshToken.mockReturnValue("stored.refresh.token");
+  mockSetRefreshToken.mockImplementation(() => {});
+  mockClearRefreshToken.mockImplementation(() => {});
 });
 
 function mockFetch(status: number, body: unknown, headers?: Record<string, string>) {
@@ -64,7 +77,7 @@ function mockFetch(status: number, body: unknown, headers?: Record<string, strin
 
 describe("signIn", () => {
   it("sends credentials to the sign-in endpoint", async () => {
-    mockFetch(200, {}, { Authorization: "Bearer new.token" });
+    mockFetch(200, { auth: { refresh_token: "new.refresh.token" } }, { Authorization: "Bearer new.token" });
     await signIn("hr@example.com", "Password1!");
     expect(fetch).toHaveBeenCalledWith(
       `${BASE_URL}/api/v1/users/sign_in`,
@@ -75,10 +88,16 @@ describe("signIn", () => {
     );
   });
 
-  it("stores the token returned in the Authorization response header", async () => {
-    mockFetch(200, {}, { Authorization: "Bearer new.token" });
+  it("stores the JWT returned in the Authorization response header", async () => {
+    mockFetch(200, { auth: { refresh_token: "new.refresh.token" } }, { Authorization: "Bearer new.token" });
     await signIn("hr@example.com", "Password1!");
     expect(mockSetToken).toHaveBeenCalledWith("Bearer new.token");
+  });
+
+  it("stores the refresh token returned in the response body", async () => {
+    mockFetch(200, { auth: { refresh_token: "new.refresh.token" } }, { Authorization: "Bearer new.token" });
+    await signIn("hr@example.com", "Password1!");
+    expect(mockSetRefreshToken).toHaveBeenCalledWith("new.refresh.token");
   });
 
   it("throws when credentials are invalid", async () => {
@@ -100,10 +119,27 @@ describe("signOut", () => {
     );
   });
 
-  it("clears the stored token after sign-out", async () => {
+  it("sends the stored refresh token in the request body", async () => {
+    mockFetch(200, { message: "Signed out successfully." });
+    await signOut();
+    expect(fetch).toHaveBeenCalledWith(
+      `${BASE_URL}/api/v1/users/sign_out`,
+      expect.objectContaining({
+        body: JSON.stringify({ auth: { refresh_token: "stored.refresh.token" } }),
+      })
+    );
+  });
+
+  it("clears the stored JWT after sign-out", async () => {
     mockFetch(200, { message: "Signed out successfully." });
     await signOut();
     expect(mockClearToken).toHaveBeenCalled();
+  });
+
+  it("clears the stored refresh token after sign-out", async () => {
+    mockFetch(200, { message: "Signed out successfully." });
+    await signOut();
+    expect(mockClearRefreshToken).toHaveBeenCalled();
   });
 });
 
@@ -362,10 +398,10 @@ describe("token refresh on 401", () => {
     mockNavigate.mockRestore();
   });
 
-  it("calls the refresh endpoint with credentials:include and no Authorization header when a request returns 401", async () => {
+  it("sends the stored refresh token in the request body and omits the Authorization header when a request returns 401", async () => {
     mockFetchSequence(
       { status: 401, body: {} },
-      { status: 200, body: {}, headers: { Authorization: "Bearer new.token" } },
+      { status: 200, body: { auth: { refresh_token: "new.refresh.token" } }, headers: { Authorization: "Bearer new.token" } },
       { status: 200, body: successfulEmployeeList },
     );
 
@@ -373,15 +409,18 @@ describe("token refresh on 401", () => {
 
     const refreshCall = (fetch as jest.Mock).mock.calls[1];
     expect(refreshCall[0]).toBe(`${BASE_URL}/api/v1/users/refresh`);
-    expect(refreshCall[1]).toMatchObject({ method: "POST", credentials: "include" });
+    expect(refreshCall[1]).toMatchObject({
+      method: "POST",
+      body: JSON.stringify({ auth: { refresh_token: "stored.refresh.token" } }),
+    });
     expect((refreshCall[1].headers ?? {})).not.toHaveProperty("Authorization");
   });
 
-  it("calls the refresh endpoint even when no JWT is stored (cookie is the credential)", async () => {
-    mockGetToken.mockReturnValue(null); // no JWT in localStorage
+  it("calls the refresh endpoint using the stored refresh token even when no JWT is present", async () => {
+    mockGetToken.mockReturnValue(null);
     mockFetchSequence(
       { status: 401, body: {} },
-      { status: 200, body: {}, headers: { Authorization: "Bearer new.token" } },
+      { status: 200, body: { auth: { refresh_token: "new.refresh.token" } }, headers: { Authorization: "Bearer new.token" } },
       { status: 200, body: successfulEmployeeList },
     );
 
@@ -389,19 +428,34 @@ describe("token refresh on 401", () => {
 
     const refreshCall = (fetch as jest.Mock).mock.calls[1];
     expect(refreshCall[0]).toBe(`${BASE_URL}/api/v1/users/refresh`);
-    expect(refreshCall[1]).toMatchObject({ method: "POST", credentials: "include" });
+    expect(refreshCall[1]).toMatchObject({
+      method: "POST",
+      body: JSON.stringify({ auth: { refresh_token: "stored.refresh.token" } }),
+    });
   });
 
-  it("stores the new token returned by the refresh endpoint", async () => {
+  it("stores the new JWT returned by the refresh endpoint", async () => {
     mockFetchSequence(
       { status: 401, body: {} },
-      { status: 200, body: {}, headers: { Authorization: "Bearer new.token" } },
+      { status: 200, body: { auth: { refresh_token: "new.refresh.token" } }, headers: { Authorization: "Bearer new.token" } },
       { status: 200, body: successfulEmployeeList },
     );
 
     await listEmployees({});
 
     expect(mockSetToken).toHaveBeenCalledWith("Bearer new.token");
+  });
+
+  it("stores the rotated refresh token returned by the refresh endpoint", async () => {
+    mockFetchSequence(
+      { status: 401, body: {} },
+      { status: 200, body: { auth: { refresh_token: "new.refresh.token" } }, headers: { Authorization: "Bearer new.token" } },
+      { status: 200, body: successfulEmployeeList },
+    );
+
+    await listEmployees({});
+
+    expect(mockSetRefreshToken).toHaveBeenCalledWith("new.refresh.token");
   });
 
   it("retries the original request with the refreshed token and returns the result", async () => {
@@ -411,7 +465,7 @@ describe("token refresh on 401", () => {
 
     mockFetchSequence(
       { status: 401, body: {} },
-      { status: 200, body: {}, headers: { Authorization: "Bearer new.token" } },
+      { status: 200, body: { auth: { refresh_token: "new.refresh.token" } }, headers: { Authorization: "Bearer new.token" } },
       { status: 200, body: successfulEmployeeList },
     );
 
@@ -427,7 +481,7 @@ describe("token refresh on 401", () => {
     expect(result).toEqual(successfulEmployeeList);
   });
 
-  it("clears the token and redirects to /sign-in when refresh also returns 401", async () => {
+  it("clears both tokens and redirects to /sign-in when refresh also returns 401", async () => {
     mockFetchSequence(
       { status: 401, body: {} },
       { status: 401, body: {} },
@@ -436,13 +490,14 @@ describe("token refresh on 401", () => {
     await expect(listEmployees({})).rejects.toThrow();
 
     expect(mockClearToken).toHaveBeenCalled();
+    expect(mockClearRefreshToken).toHaveBeenCalled();
     expect(mockNavigate).toHaveBeenCalledWith("/sign-in");
   });
 
   it("does not attempt a refresh when retrying (prevents infinite loop)", async () => {
     mockFetchSequence(
       { status: 401, body: {} },
-      { status: 200, body: {}, headers: { Authorization: "Bearer new.token" } },
+      { status: 200, body: { auth: { refresh_token: "new.refresh.token" } }, headers: { Authorization: "Bearer new.token" } },
       { status: 401, body: {} }, // retry also 401
     );
 
@@ -458,7 +513,7 @@ describe("token refresh on 401", () => {
     global.fetch = jest.fn()
       .mockResolvedValueOnce({ ok: false, status: 401, headers: { get: () => null }, json: jest.fn().mockResolvedValue({}) })
       .mockResolvedValueOnce({ ok: false, status: 401, headers: { get: () => null }, json: jest.fn().mockResolvedValue({}) })
-      .mockResolvedValueOnce({ ok: true,  status: 200, headers: { get: (k: string) => k === "Authorization" ? "Bearer new.token" : null }, json: jest.fn().mockResolvedValue({}) })
+      .mockResolvedValueOnce({ ok: true,  status: 200, headers: { get: (k: string) => k === "Authorization" ? "Bearer new.token" : null }, json: jest.fn().mockResolvedValue({ auth: { refresh_token: "new.refresh.token" } }) })
       .mockResolvedValue({ ok: true, status: 200, headers: { get: () => null }, json: jest.fn().mockResolvedValue(successfulEmployeeList) });
 
     await Promise.all([listEmployees({}), listEmployees({})]);

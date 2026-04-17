@@ -1,4 +1,4 @@
-import { getToken, setToken, clearToken } from "@/lib/auth";
+import { getToken, setToken, clearToken, getRefreshToken, setRefreshToken, clearRefreshToken } from "@/lib/auth";
 
 const TOKEN = "test.jwt.token";
 
@@ -55,5 +55,45 @@ describe("clearToken", () => {
     document.cookie = `auth_token=${TOKEN}; path=/`;
     clearToken();
     expect(document.cookie).not.toContain("auth_token=");
+  });
+});
+
+const REFRESH_TOKEN = "test.refresh.token";
+
+describe("getRefreshToken", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("returns null when no refresh token has been stored", () => {
+    expect(getRefreshToken()).toBeNull();
+  });
+
+  it("returns the stored refresh token", () => {
+    localStorage.setItem("refresh_token", REFRESH_TOKEN);
+    expect(getRefreshToken()).toBe(REFRESH_TOKEN);
+  });
+});
+
+describe("setRefreshToken", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("persists the refresh token to localStorage", () => {
+    setRefreshToken(REFRESH_TOKEN);
+    expect(localStorage.getItem("refresh_token")).toBe(REFRESH_TOKEN);
+  });
+});
+
+describe("clearRefreshToken", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("removes the refresh token from localStorage", () => {
+    localStorage.setItem("refresh_token", REFRESH_TOKEN);
+    clearRefreshToken();
+    expect(localStorage.getItem("refresh_token")).toBeNull();
   });
 });
