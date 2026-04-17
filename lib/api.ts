@@ -34,12 +34,9 @@ async function tryRefreshToken(): Promise<boolean> {
   if (_refreshPromise) return _refreshPromise;
 
   _refreshPromise = (async () => {
-    const token = getToken();
-    if (!token) return false;
-
     const response = await fetch(`${BASE_URL}/api/v1/users/refresh`, {
       method: "POST",
-      headers: { Authorization: token },
+      credentials: "include",
     });
 
     if (!response.ok) return false;
