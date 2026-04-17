@@ -65,11 +65,23 @@ export const _navigate = {
   },
 };
 
-function redirectToSignIn(): never {
-  clearToken();
-  clearRefreshToken();
-  _navigate.to("/sign-in");
-  throw new AuthError("Unauthorized");
+// Exported for tests only — resets the one-shot redirect guard between test cases
+export function _resetRedirecting() {
+  _redirecting = false;
+}
+
+let _redirecting = false;
+
+function redirectToSignIn(): Promise<never> {
+  if (!_redirecting) {
+    _redirecting = true;
+    clearToken();
+    clearRefreshToken();
+    _navigate.to("/sign-in");
+  }
+  // Return a promise that never settles so the calling async function
+  // suspends until the page unloads. No AuthError propagates.
+  return new Promise<never>(() => {});
 }
 
 async function request<T>(
@@ -93,7 +105,7 @@ async function request<T>(
         return request<T>(path, options, true);
       }
     }
-    redirectToSignIn();
+    return redirectToSignIn();
   }
 
   if (response.status === 204) {
