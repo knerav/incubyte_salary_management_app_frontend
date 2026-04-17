@@ -5,8 +5,10 @@ import {
   getSalaryInsights,
   listJobTitles,
   listDepartments,
+  listCountries,
 } from "@/lib/api";
 import type {
+  Country,
   Department,
   JobTitle,
   SalaryInsights,
@@ -28,9 +30,10 @@ export default function InsightsPage() {
   const [insights, setInsights] = useState<SalaryInsights | null>(null);
   const [jobTitles, setJobTitles] = useState<JobTitle[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [countries, setCountries] = useState<Country[]>([]);
   const [filters, setFilters] = useState<InsightFilters>({});
 
-  async function fetchInsights(f: InsightFilters = filters) {
+  async function fetchInsights(f: InsightFilters) {
     try {
       setInsights(await getSalaryInsights(f));
     } catch {
@@ -39,9 +42,21 @@ export default function InsightsPage() {
   }
 
   useEffect(() => {
-    fetchInsights(filters);
+    getSalaryInsights({})
+      .then((data) => {
+        setInsights(data);
+        const seeded: InsightFilters = {};
+        if (data.filters.country) seeded.country = data.filters.country;
+        if (data.filters.department_id)
+          seeded.department_id = parseInt(data.filters.department_id, 10);
+        if (data.filters.job_title_id)
+          seeded.job_title_id = parseInt(data.filters.job_title_id, 10);
+        setFilters(seeded);
+      })
+      .catch(() => {});
     listJobTitles().then(setJobTitles);
     listDepartments().then(setDepartments);
+    listCountries().then(setCountries);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleFilterChange(patch: Partial<InsightFilters>) {
@@ -57,6 +72,30 @@ export default function InsightsPage() {
           <h1 className="text-2xl font-bold">Insights</h1>
         </div>
         <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground">
+              Country
+            </span>
+            <Select
+              value={filters.country ?? ALL}
+              onValueChange={(v) =>
+                handleFilterChange({ country: v === ALL ? undefined : v })
+              }
+            >
+              <SelectTrigger className="w-full" aria-label="Country">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All</SelectItem>
+                {countries.map((c) => (
+                  <SelectItem key={c.code} value={c.code}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium text-muted-foreground">
               Department

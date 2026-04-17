@@ -66,8 +66,15 @@ export interface SalaryInsights {
     min_salary: string;
     max_salary: string;
     avg_salary: string;
+    currency_code: string;
+    currency_symbol: string;
     breakdowns: SalaryBreakdown[];
   };
+}
+
+export interface Country {
+  code: string;
+  name: string;
 }
 
 export interface SalaryHistoryEntry {

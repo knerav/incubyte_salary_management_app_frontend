@@ -26,16 +26,24 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 }
 
 export default function SalaryInsightsPanel({ insights }: Props) {
-  const { employee_count, min_salary, max_salary, avg_salary, breakdowns } =
-    insights.insights;
+  const {
+    employee_count,
+    min_salary,
+    max_salary,
+    avg_salary,
+    currency_symbol,
+    breakdowns,
+  } = insights.insights;
+
+  const fmt = (value: string) => `${currency_symbol}${value}`;
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatCard label="Employees" value={employee_count} />
-        <StatCard label="Avg Salary" value={avg_salary} />
-        <StatCard label="Min Salary" value={min_salary} />
-        <StatCard label="Max Salary" value={max_salary} />
+        <StatCard label="Avg Salary" value={fmt(avg_salary)} />
+        <StatCard label="Min Salary" value={fmt(min_salary)} />
+        <StatCard label="Max Salary" value={fmt(max_salary)} />
       </div>
 
       {breakdowns.length > 0 && (
@@ -52,7 +60,7 @@ export default function SalaryInsightsPanel({ insights }: Props) {
               {breakdowns.map((row) => (
                 <TableRow key={row.job_title}>
                   <TableCell>{row.job_title}</TableCell>
-                  <TableCell>{row.avg_salary}</TableCell>
+                  <TableCell>{fmt(row.avg_salary)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

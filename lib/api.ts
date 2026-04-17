@@ -10,6 +10,7 @@ import type {
   SalaryHistoryEntry,
   SalaryHistoryResponse,
   ApiValidationError,
+  Country,
 } from "@/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
@@ -273,6 +274,13 @@ export async function updateDepartment(
 
 export async function deleteDepartment(id: number): Promise<void> {
   return request<void>(`/api/v1/departments/${id}`, { method: "DELETE" });
+}
+
+// Countries
+
+export async function listCountries(): Promise<Country[]> {
+  const data = await request<{ countries: Country[] }>("/api/v1/countries");
+  return data.countries;
 }
 
 // Insights
