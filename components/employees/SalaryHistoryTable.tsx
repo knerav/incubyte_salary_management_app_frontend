@@ -29,8 +29,8 @@ export default function SalaryHistoryTable({ history }: Props) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {history.map((entry) => (
-          <TableRow key={entry.effective_from}>
+        {history.map((entry, i) => (
+          <TableRow key={`${entry.effective_from}-${i}`}>
             <TableCell>{entry.effective_from}</TableCell>
             <TableCell>{entry.salary} {entry.currency}</TableCell>
             <TableCell>{entry.change ?? "—"}</TableCell>
