@@ -3,19 +3,22 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { getEmployee, deleteEmployee, updateSalary } from "@/lib/api";
-import type { Employee, SalaryUpdateData } from "@/types";
+import { getEmployee, deleteEmployee, updateSalary, getSalaryHistory } from "@/lib/api";
+import type { Employee, SalaryHistoryEntry, SalaryUpdateData } from "@/types";
 import DeleteEmployeeButton from "@/components/employees/DeleteEmployeeButton";
 import SalaryUpdateForm from "@/components/employees/SalaryUpdateForm";
+import SalaryHistoryTable from "@/components/employees/SalaryHistoryTable";
 
 export default function EmployeePage() {
   const { id } = useParams<{ id: string }>();
   const numId = parseInt(id, 10);
   const router = useRouter();
   const [employee, setEmployee] = useState<Employee | null>(null);
+  const [salaryHistory, setSalaryHistory] = useState<SalaryHistoryEntry[]>([]);
 
   useEffect(() => {
     getEmployee(numId).then(setEmployee);
+    getSalaryHistory(numId).then(setSalaryHistory);
   }, [numId]);
 
   async function handleDelete(employeeId: number) {
@@ -86,6 +89,11 @@ export default function EmployeePage() {
           <dd>{employee.hired_on}</dd>
         </div>
       </dl>
+
+      <div className="border-t pt-6">
+        <h2 className="mb-4 text-lg font-semibold">Salary History</h2>
+        <SalaryHistoryTable history={salaryHistory} />
+      </div>
 
       <div className="border-t pt-6">
         <h2 className="mb-4 text-lg font-semibold">Update Salary</h2>

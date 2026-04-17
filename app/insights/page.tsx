@@ -3,19 +3,16 @@
 import { useEffect, useState } from "react";
 import {
   getSalaryInsights,
-  getHistoricalSalaryInsights,
   listJobTitles,
   listDepartments,
 } from "@/lib/api";
 import type {
   Department,
-  HistoricalSalaryInsights,
   JobTitle,
   SalaryInsights,
 } from "@/types";
 import type { InsightFilters } from "@/lib/api";
 import SalaryInsightsPanel from "@/components/insights/SalaryInsightsPanel";
-import SalaryHistoryChart from "@/components/insights/SalaryHistoryChart";
 import { BarChart3 } from "lucide-react";
 import {
   Select,
@@ -29,19 +26,13 @@ const ALL = "all";
 
 export default function InsightsPage() {
   const [insights, setInsights] = useState<SalaryInsights | null>(null);
-  const [history, setHistory] = useState<HistoricalSalaryInsights | null>(null);
   const [jobTitles, setJobTitles] = useState<JobTitle[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [filters, setFilters] = useState<InsightFilters>({});
 
   async function fetchInsights(f: InsightFilters = filters) {
     try {
-      const [ins, hist] = await Promise.all([
-        getSalaryInsights(f),
-        getHistoricalSalaryInsights(f),
-      ]);
-      setInsights(ins);
-      setHistory(hist);
+      setInsights(await getSalaryInsights(f));
     } catch {
       // leave insights null so the empty state renders
     }
@@ -129,20 +120,7 @@ export default function InsightsPage() {
           </p>
         </div>
       ) : (
-        <>
-          {insights && (
-            <div className="mb-8">
-              <SalaryInsightsPanel insights={insights} />
-            </div>
-          )}
-
-          {history && (
-            <div className="rounded-lg border bg-card p-6">
-              <h2 className="mb-4 text-lg font-semibold">Salary History</h2>
-              <SalaryHistoryChart history={history} />
-            </div>
-          )}
-        </>
+        <SalaryInsightsPanel insights={insights} />
       )}
     </main>
   );

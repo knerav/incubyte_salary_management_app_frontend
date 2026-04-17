@@ -7,7 +7,8 @@ import type {
   JobTitle,
   Department,
   SalaryInsights,
-  HistoricalSalaryInsights,
+  SalaryHistoryEntry,
+  SalaryHistoryResponse,
   ApiValidationError,
 } from "@/types";
 
@@ -180,6 +181,11 @@ export async function deleteEmployee(id: number): Promise<void> {
   return request<void>(`/api/v1/employees/${id}`, { method: "DELETE" });
 }
 
+export async function getSalaryHistory(id: number): Promise<SalaryHistoryEntry[]> {
+  const data = await request<SalaryHistoryResponse>(`/api/v1/employees/${id}/salary_history`);
+  return data.salary_history;
+}
+
 // Job Titles
 
 export async function listJobTitles(): Promise<JobTitle[]> {
@@ -238,20 +244,7 @@ export interface InsightFilters {
   job_title_id?: number;
 }
 
-export interface HistoricalInsightFilters extends InsightFilters {
-  from?: string;
-  to?: string;
-  group_by?: "month" | "quarter" | "year";
-}
-
 export async function getSalaryInsights(filters: InsightFilters): Promise<SalaryInsights> {
   const qs = toQueryString(filters as Record<string, string | number | undefined>);
   return request<SalaryInsights>(`/api/v1/insights/salary${qs}`);
-}
-
-export async function getHistoricalSalaryInsights(
-  filters: HistoricalInsightFilters
-): Promise<HistoricalSalaryInsights> {
-  const qs = toQueryString(filters as Record<string, string | number | undefined>);
-  return request<HistoricalSalaryInsights>(`/api/v1/insights/salary/history${qs}`);
 }
