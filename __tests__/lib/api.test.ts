@@ -29,7 +29,10 @@ import {
   getSalaryHistory,
   listCountries,
   _navigate,
+  _resetRedirecting,
 } from "@/lib/api";
+
+const flushPromises = () => new Promise<void>(resolve => setTimeout(resolve, 0));
 import type { EmployeeFormData, SalaryUpdateData } from "@/types";
 
 const BASE_URL = "http://localhost:3000";
@@ -57,6 +60,7 @@ const mockClearRefreshToken = clearRefreshToken as jest.MockedFunction<typeof cl
 
 beforeEach(() => {
   jest.clearAllMocks();
+  _resetRedirecting();
   mockGetToken.mockReturnValue("Bearer mock.jwt.token");
   mockSetToken.mockImplementation(() => {});
   mockClearToken.mockImplementation(() => {});
@@ -165,10 +169,11 @@ describe("listEmployees", () => {
     expect(url).toContain("country=US");
   });
 
-  it("clears the token, redirects to /sign-in, and throws when both the request and refresh return 401", async () => {
+  it("clears the token and redirects to /sign-in when both the request and refresh return 401", async () => {
     const mockNavigate = jest.spyOn(_navigate, "to").mockImplementation(() => {});
     mockFetch(401, { error: "Unauthorized" }); // all calls return 401 (refresh included)
-    await expect(listEmployees({})).rejects.toThrow();
+    listEmployees({}); // intentionally not awaited — promise never settles after redirect
+    await flushPromises();
     expect(mockClearToken).toHaveBeenCalled();
     expect(mockNavigate).toHaveBeenCalledWith("/sign-in");
     mockNavigate.mockRestore();
@@ -500,7 +505,8 @@ describe("token refresh on 401", () => {
       { status: 401, body: {} },
     );
 
-    await expect(listEmployees({})).rejects.toThrow();
+    listEmployees({}); // intentionally not awaited — promise never settles after redirect
+    await flushPromises();
 
     expect(mockClearToken).toHaveBeenCalled();
     expect(mockClearRefreshToken).toHaveBeenCalled();
@@ -514,7 +520,8 @@ describe("token refresh on 401", () => {
       { status: 401, body: {} }, // retry also 401
     );
 
-    await expect(listEmployees({})).rejects.toThrow();
+    listEmployees({}); // intentionally not awaited — promise never settles after redirect
+    await flushPromises();
 
     expect(fetch).toHaveBeenCalledTimes(3); // original + refresh + retry only
     expect(mockClearToken).toHaveBeenCalled();
