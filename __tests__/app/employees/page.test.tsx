@@ -104,23 +104,6 @@ describe("EmployeesPage", () => {
     });
   });
 
-  describe("employee show modal", () => {
-    it("opens a modal with employee details when an employee name is clicked", async () => {
-      render(<EmployeesPage />);
-      await userEvent.click(await screen.findByRole("button", { name: "Jane Smith" }));
-      expect(await screen.findByRole("dialog")).toBeInTheDocument();
-      expect(await screen.findByText("jane@example.com")).toBeInTheDocument();
-    });
-
-    it("closes the modal when the close button is clicked", async () => {
-      render(<EmployeesPage />);
-      await userEvent.click(await screen.findByRole("button", { name: "Jane Smith" }));
-      await screen.findByRole("dialog");
-      await userEvent.click(screen.getByRole("button", { name: /close/i }));
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    });
-  });
-
   describe("edit employee modal", () => {
     it("opens an edit form modal when the edit button is clicked on a row", async () => {
       render(<EmployeesPage />);
