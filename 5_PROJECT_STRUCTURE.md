@@ -78,14 +78,15 @@ salary-management-frontend-app/
 │   │   ├── JobTitleManager.tsx       ← Inline list with add/edit/delete
 │   │   └── DepartmentManager.tsx     ← Inline list with add/edit/delete
 │   └── ui/
-│       └── pagination.tsx            ← Previous/Next + page number buttons; hidden when totalPages ≤ 1
+│       └── pagination.tsx            ← Windowed pagination: first, current±2, last pages with ellipses; hidden when totalPages ≤ 1
 │
 ├── contexts/
 │   └── AuthContext.tsx               ← Provides { token, signIn, signOut } to the client tree
 │
 ├── lib/
 │   ├── auth.ts                       ← JWT and refresh token storage (getToken/setToken/clearToken + getRefreshToken/setRefreshToken/clearRefreshToken)
-│   └── api.ts                        ← Typed fetch wrappers for all API endpoints
+│   ├── api.ts                        ← Typed fetch wrappers for all API endpoints
+│   └── countries.ts                  ← ISO country/currency helpers (getCountryOptions, getCurrencyForCountry, getCurrencyOptions) backed by i18n-iso-countries + country-to-currency
 │
 ├── types/
 │   └── index.ts                      ← Shared TypeScript types (Employee, SalaryInsights, etc.)

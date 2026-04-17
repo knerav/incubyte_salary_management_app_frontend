@@ -81,11 +81,30 @@ With 10,000 employees, fetching the full dataset and filtering in the browser is
 
 The employee record originally stored job title as free text. That creates a data quality problem: "Software Engineer", "software engineer", and "Softwre Engineer" are treated as three distinct dimensions in insight groupings, silently distorting averages and counts.
 
-To prevent this, job titles are managed by HR Managers as a separate reference table. Employees reference a `job_title_id` foreign key rather than entering text directly. The unique constraint on `job_titles.name` enforces a single canonical form per title, and the `countries` gem resolves the display name at runtime so the UI always shows the full title without storing redundant string data on each employee row.
+To prevent this, job titles are managed by HR Managers as a separate reference table. Employees reference a `job_title_id` foreign key rather than entering text directly. The unique constraint on `job_titles.name` enforces a single canonical form per title. The UI always shows the full title name because it is stored directly in the `job_titles` table — no redundant string data is kept on the employee row itself.
 
 This also prevents orphaned references — deleting a job title that still has employees assigned is blocked at the model layer, keeping the reference data consistent.
 
 The same approach applies to `department`. Free-text department names carry the same data quality risk, so `department_id` replaces the original `department` varchar on employees. Both job titles and departments are managed from a Company Settings page in the UI, keeping reference data management in one place rather than buried inside the employee form.
+
+---
+
+## ISO-driven country and currency dropdowns in the employee form
+
+The employee form needs country and currency dropdowns. Two small packages handle this without any backend involvement:
+
+- **`i18n-iso-countries`** — provides the full ISO 3166-1 country list (code → display name). The locale is registered once at module load in `lib/countries.ts`, keeping the component free of setup boilerplate.
+- **`country-to-currency`** — maps each ISO 3166-1 alpha-2 code to its ISO 4217 currency code. Used to auto-populate the currency field when the user picks a country, while keeping currency independently editable.
+
+The form sends the alpha-2 code (e.g. `"GB"`) to the backend — not the display name. The full country list is appropriate here because the HR manager is creating a new employee who may be in any country; the insights filter uses the backend's `GET /api/v1/countries` (which returns only countries with active employees) for a different reason.
+
+---
+
+## One-shot redirect guard for concurrent 401s
+
+When multiple API requests are in-flight simultaneously and all receive a `401`, the `_refreshPromise` deduplication ensures only one token refresh fires. However, if the refresh itself fails, every waiting request independently calls `redirectToSignIn()`. Without a guard this causes multiple `clearToken()` + `clearRefreshToken()` calls and multiple `window.location.href` assignments, and each call site throws an `AuthError` that propagates as an unhandled promise rejection.
+
+The fix uses a module-level `_redirecting` flag. The first call to `redirectToSignIn()` clears tokens and navigates; subsequent calls skip straight to returning a `Promise<never>` that suspends the caller until the page unloads. No `AuthError` is thrown, so no unhandled rejections are generated.
 
 ---
 

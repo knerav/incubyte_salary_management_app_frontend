@@ -33,7 +33,7 @@ Every piece of behaviour is written test-first:
 
 ### 1. `lib/auth.ts` — token storage utility
 
-The simplest unit: pure functions wrapping `localStorage`. Tests mock `localStorage` and verify `getToken`, `setToken`, and `clearToken` behave correctly, including the case where `localStorage` is unavailable (SSR guard).
+The simplest unit: pure functions wrapping `localStorage`. Tests mock `localStorage` and verify all six functions (`getToken`, `setToken`, `clearToken`, `getRefreshToken`, `setRefreshToken`, `clearRefreshToken`) behave correctly, including the case where `localStorage` is unavailable (SSR guard).
 
 ### 2. `lib/api.ts` — typed API client
 
@@ -84,6 +84,7 @@ Pages are tested with the same RTL setup as components, but the API module is mo
 **Mocking patterns:**
 
 - `next/navigation` is mocked to provide `useRouter` (`push`, `replace`) and `useParams` (returns the relevant `id`). This avoids Suspense complications that arise from using `use(params)` in a test environment.
+- `@/lib/countries` is mocked in any test that renders `EmployeeForm` to avoid loading the full 250-country ISO dataset. The mock returns a small fixed list (`GB`, `IN`, `US`) and a matching currency map, keeping tests fast and deterministic.
 
 ### 5. What I'm not testing
 
