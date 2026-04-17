@@ -25,7 +25,7 @@ incubyte-salary-management/
 │   │           ├── departments_controller.rb
 │   │           ├── employees_controller.rb
 │   │           ├── auth/
-│   │           │   ├── sessions_controller.rb    ← sign-in (issues JWT + refresh cookie), sign-out (clears both), refresh (rotates refresh token)
+│   │           │   ├── sessions_controller.rb    ← sign-in (issues JWT + refresh token in body), sign-out (invalidates refresh token), refresh (rotates refresh token)
 │   │           │   └── registrations_controller.rb
 │   │           └── insights/
 │   │               └── salary_controller.rb
@@ -84,7 +84,7 @@ salary-management-frontend-app/
 │   └── AuthContext.tsx               ← Provides { token, signIn, signOut } to the client tree
 │
 ├── lib/
-│   ├── auth.ts                       ← getToken / setToken / clearToken (localStorage wrapper)
+│   ├── auth.ts                       ← JWT and refresh token storage (getToken/setToken/clearToken + getRefreshToken/setRefreshToken/clearRefreshToken)
 │   └── api.ts                        ← Typed fetch wrappers for all API endpoints
 │
 ├── types/
@@ -163,4 +163,4 @@ The `_navigate` export (`{ to: (path: string) => void }`) wraps `window.location
 
 `proxy.ts` checks for the presence of an `auth_token` cookie on every request to a protected route (anything except `/sign-in`). If absent, it redirects to `/sign-in`. Client-side, `AuthContext` also guards against stale renders if the token is missing from `localStorage`.
 
-> **Note on token storage:** The JWT is stored in `localStorage` and mirrored to a non-`HttpOnly` cookie solely so that `proxy.ts` can read it server-side for redirect protection. The refresh token, however, is stored in a separate `HttpOnly` cookie (`SameSite=Strict`, scoped to `Path=/api/v1/users/refresh`) — JavaScript cannot read it, which eliminates the XSS exfiltration path for long-lived credentials.
+> **Note on token storage:** The JWT is stored in `localStorage` under `auth_token` and mirrored to a readable cookie of the same name so that `proxy.ts` can check it server-side (middleware cannot access `localStorage`). The refresh token is stored in `localStorage` under `refresh_token` and is read and written explicitly by `lib/auth.ts`. Both tokens are in JavaScript-readable storage — see `4_ARCHITECTURE_DECISIONS.md` for the trade-off discussion.

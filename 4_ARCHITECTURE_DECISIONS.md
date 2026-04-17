@@ -26,24 +26,24 @@ A side benefit: restoring a deleted employee is trivial — just nullify `delete
 
 ---
 
-## Two-token authentication: JWT + HttpOnly refresh token
+## Two-token authentication: JWT + refresh token in body
 
 The JWT alone is sufficient for stateless authentication, but a 30-minute expiry forces the user to re-enter credentials frequently if nothing rotates it. A refresh token solves this without weakening security.
 
-The design uses two tokens with different lifetimes and different transport mechanisms:
+The design uses two tokens with different lifetimes:
 
 - **JWT** (30 min) — short-lived, sent by the client in the `Authorization` header on every request. If intercepted, the exposure window is at most 30 minutes.
-- **Refresh token** (7 days) — long-lived, stored server-side as a SHA-256 digest in the `refresh_tokens` table and transported exclusively via an `HttpOnly` cookie scoped to `Path=/api/v1/users/refresh`.
-
-The `HttpOnly` flag means JavaScript cannot read the cookie — an XSS attack that exfiltrates tokens from `localStorage` has no path to the refresh token. The `Path` scope means the cookie is only ever sent to the refresh endpoint, so it is invisible to all other API requests. The `SameSite=Strict` attribute blocks CSRF from cross-origin requests.
+- **Refresh token** (7 days) — long-lived, stored server-side as a SHA-256 digest in the `refresh_tokens` table. Delivered in the response body at `data.auth.refresh_token` on sign-in and on every refresh. The frontend stores it in `localStorage`.
 
 We store a SHA-256 digest rather than the raw token. If the database is compromised, the digests cannot be reversed to valid tokens.
 
 Refresh tokens are rotated on every use: the old record is deleted and a new one is created. This gives each token a fresh 7-day window from the last refresh — a user who is active stays signed in indefinitely; a user who is inactive for 7 days must sign in again. It also means a stolen refresh token can only be used once before it is invalidated by the legitimate user's next refresh.
 
-The refresh endpoint does not require a valid JWT. That is intentional — its purpose is to issue a new JWT after the previous one has expired. Authentication for this endpoint is provided solely by the refresh token cookie.
+The refresh endpoint does not require a valid JWT — its purpose is to issue a new JWT after the previous one has expired. The refresh token in the request body is the sole credential.
 
-Sign-out deletes the `refresh_tokens` record and clears the cookie, invalidating both tokens in a single request.
+Sign-out accepts the refresh token in the request body to delete the `refresh_tokens` record server-side, invalidating the session immediately rather than waiting for natural expiry.
+
+**Trade-off:** Storing the refresh token in `localStorage` means a successful XSS attack could read it. An `HttpOnly` cookie is the stronger model, but it requires careful CORS configuration when the frontend and backend are on different origins. Since both tokens are in `localStorage`, the security properties are symmetric — the benefit of an in-memory JWT disappears when the refresh token is equally accessible. For a production deployment, moving to `HttpOnly` cookies (with a properly configured CORS setup or a same-origin reverse proxy) would be the recommended upgrade.
 
 ---
 

@@ -41,11 +41,13 @@ The API client is tested by mocking the global `fetch`. Tests verify:
 
 - The correct URL and method are called for each endpoint.
 - The `Authorization` header is included when a token is present and absent when it is not.
-- A `401` response triggers a refresh attempt (`POST /api/v1/users/refresh`), and the original request is retried with the new JWT on success.
-- A `401` on the refresh itself calls `clearToken` and redirects to `/sign-in`.
+- A `401` response triggers a refresh attempt (`POST /api/v1/users/refresh`) with the stored refresh token in the request body.
+- On a successful refresh, the new JWT and rotated refresh token are stored and the original request is retried.
+- A `401` on the refresh itself calls `clearToken`, `clearRefreshToken`, and redirects to `/sign-in`.
 - Concurrent `401` responses only trigger one refresh attempt, not multiple.
 - A `422` response surfaces the `errors` object.
-- The token is extracted from the `Authorization` response header on sign-in.
+- On sign-in, the JWT is extracted from the `Authorization` response header and the refresh token is extracted from `data.auth.refresh_token`.
+- Sign-out sends the refresh token in the request body and calls `clearRefreshToken`.
 
 Redirects are asserted by spying on the `_navigate.to` export rather than `window.location` (which jsdom does not allow reassignment of).
 

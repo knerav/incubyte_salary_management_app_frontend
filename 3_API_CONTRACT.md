@@ -8,7 +8,7 @@ All endpoints are prefixed with `/api/v1`. The base URL is configured via the `N
 
 ## Authentication
 
-The backend uses a two-token scheme: a short-lived JWT for request authentication and a long-lived refresh token delivered via an `HttpOnly` cookie.
+The backend uses a two-token scheme: a short-lived JWT for request authentication and a long-lived refresh token delivered in the response body.
 
 ### JWT
 
@@ -22,21 +22,13 @@ Tokens expire after 30 minutes. Requests without a valid token return `401 Unaut
 
 ### Refresh token
 
-A refresh token is set as an `HttpOnly` cookie at sign-in:
-
-- **Name:** `refresh_token`
-- **HttpOnly:** `true` — JavaScript cannot read or exfiltrate it
-- **SameSite:** `Strict` — blocks CSRF from cross-origin requests
-- **Path:** `/api/v1/users/refresh` — the cookie is only sent to the refresh endpoint, not to any other API request
-- **Max-Age:** 7 days
-
-The backend stores a SHA-256 digest of the token — the raw value is never persisted.
+A refresh token is returned in the **response body** at `data.auth.refresh_token` on sign-in and on every successful refresh. The backend stores a SHA-256 digest of the token — the raw value is never persisted. Tokens are rotated on every use: the old record is deleted and a new one is created, giving a fresh 7-day window from the last activity.
 
 ### Token storage
 
-The frontend stores the JWT in `localStorage` under the key `auth_token`. A thin `lib/auth.ts` module wraps all reads and writes so storage can be swapped without touching call sites, and so tests can mock it cleanly.
+The frontend stores the JWT in `localStorage` under the key `auth_token`, mirrored to a readable cookie so that `proxy.ts` (Next.js middleware) can check auth state for route protection.
 
-The refresh token is managed entirely by the browser via the `Set-Cookie` header — the frontend never reads or writes it directly.
+The refresh token is stored in `localStorage` under the key `refresh_token` and is read and written explicitly by `lib/auth.ts`.
 
 ### TypeScript types
 
@@ -45,15 +37,18 @@ The refresh token is managed entirely by the browser via the `Set-Cookie` header
 getToken(): string | null
 setToken(token: string): void
 clearToken(): void
+getRefreshToken(): string | null
+setRefreshToken(token: string): void
+clearRefreshToken(): void
 ```
 
 ### 401 handling and automatic token refresh
 
 When any API request returns `401`, the frontend:
 
-1. Attempts a token refresh by calling `POST /api/v1/users/refresh`.
-2. If the refresh succeeds, replaces the stored JWT with the new one and retries the original request.
-3. If the refresh also returns `401` (refresh token expired or invalid), clears the stored JWT and redirects to `/sign-in`.
+1. Attempts a token refresh by calling `POST /api/v1/users/refresh` with `{ auth: { refresh_token: "<stored_token>" } }` in the body.
+2. If the refresh succeeds, stores the new JWT and the rotated refresh token, then retries the original request.
+3. If the refresh also returns `401` (refresh token expired or invalid), clears both stored tokens and redirects to `/sign-in`.
 
 Concurrent `401` responses trigger only one refresh attempt. Subsequent failing requests are queued and replayed once the refresh resolves.
 
@@ -169,6 +164,12 @@ interface SalaryHistoryResponse {
 interface ApiValidationError {
   errors: Record<string, string[]>;
 }
+
+interface AuthResponse {
+  auth: {
+    refresh_token: string;
+  };
+}
 ```
 
 ---
@@ -187,9 +188,9 @@ POST /api/v1/users/sign_in
 { "user": { "email": "hr@company.com", "password": "Password1!" } }
 ```
 
-**Response `200`:** Empty body. JWT is in the `Authorization` response header. Refresh token is in the `Set-Cookie` response header (`HttpOnly`, `SameSite=Strict`, `Path=/api/v1/users/refresh`, 7-day `Max-Age`).
+**Response `200`:** Body contains `{ "auth": { "refresh_token": "<token>" } }`. JWT is in the `Authorization` response header.
 
-**Frontend behaviour:** Extract the token from the `Authorization` header, call `setToken()`, then redirect to `/employees`. The browser stores the refresh token cookie automatically.
+**Frontend behaviour:** Extract the JWT from the `Authorization` header, call `setToken()`. Extract the refresh token from `data.auth.refresh_token`, call `setRefreshToken()`. Then redirect to `/employees`.
 
 ---
 
@@ -199,13 +200,13 @@ POST /api/v1/users/sign_in
 POST /api/v1/users/refresh
 ```
 
-**Request:** No `Authorization` header required. The browser sends the `HttpOnly` refresh token cookie automatically (scoped to this path).
+**Request body:** `{ "auth": { "refresh_token": "<stored_token>" } }`. No `Authorization` header required.
 
-**Response `200`:** Empty body. New JWT is in the `Authorization` response header. A new refresh token cookie is set (token rotation — the old record is deleted and a new one is created).
+**Response `200`:** Body contains `{ "auth": { "refresh_token": "<new_token>" } }`. New JWT is in the `Authorization` response header. Token rotation — the old record is deleted and a new one is created.
 
 **Response `401`:** Refresh token is invalid, expired, or absent.
 
-**Frontend behaviour:** Called automatically by `lib/api.ts` when a request returns `401`. On success, stores the new JWT via `setToken()` and replays the original request. On failure, calls `clearToken()` and redirects to `/sign-in`.
+**Frontend behaviour:** Called automatically by `lib/api.ts` when a request returns `401`. On success, stores the new JWT via `setToken()`, stores the rotated refresh token via `setRefreshToken()`, and replays the original request. On failure, calls `clearToken()`, `clearRefreshToken()`, and redirects to `/sign-in`.
 
 ---
 
@@ -215,11 +216,11 @@ POST /api/v1/users/refresh
 DELETE /api/v1/users/sign_out
 ```
 
-**Request:** Bearer token in `Authorization` header.
+**Request:** Bearer token in `Authorization` header. Body (optional): `{ "auth": { "refresh_token": "<stored_token>" } }` — including this invalidates the server-side record immediately rather than waiting for natural expiry.
 
-**Response `200`:** `{ "message": "Signed out successfully." }`. The `refresh_tokens` record is deleted and the refresh token cookie is cleared (`Max-Age=0`).
+**Response `200`:** `{ "message": "Signed out successfully." }`. The `refresh_tokens` record is deleted.
 
-**Frontend behaviour:** Call `clearToken()`, then redirect to `/sign-in`. The browser removes the refresh token cookie automatically.
+**Frontend behaviour:** Call `clearToken()` and `clearRefreshToken()`, then redirect to `/sign-in`.
 
 ---
 
