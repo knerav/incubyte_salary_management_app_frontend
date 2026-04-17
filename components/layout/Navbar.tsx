@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { CircleUser } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -42,6 +42,15 @@ function NavLink({ href, label }: { href: string; label: string }) {
 
 export default function Navbar() {
   const { token, signOut } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  if (pathname === "/sign-in") return null;
+
+  async function handleSignOut() {
+    await signOut();
+    router.push("/sign-in");
+  }
 
   return (
     <nav className="border-b bg-background">
@@ -84,7 +93,7 @@ export default function Navbar() {
                 <DropdownMenuSeparator />
               </div>
 
-              <DropdownMenuItem onClick={signOut}>Sign out</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
