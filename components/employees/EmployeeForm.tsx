@@ -129,7 +129,7 @@ export default function EmployeeForm({
         <div className="flex flex-col gap-1 text-sm">
           <span className="font-medium">Job Title</span>
           <Select {...selectField("job_title_id")}>
-            <SelectTrigger aria-label="Job Title">
+            <SelectTrigger className="w-full" aria-label="Job Title">
               <SelectValue placeholder="Select…" />
             </SelectTrigger>
             <SelectContent>
@@ -145,7 +145,7 @@ export default function EmployeeForm({
         <div className="flex flex-col gap-1 text-sm">
           <span className="font-medium">Department</span>
           <Select {...selectField("department_id")}>
-            <SelectTrigger aria-label="Department">
+            <SelectTrigger className="w-full" aria-label="Department">
               <SelectValue placeholder="Select…" />
             </SelectTrigger>
             <SelectContent>
@@ -171,7 +171,7 @@ export default function EmployeeForm({
             }));
           }}
         >
-          <SelectTrigger aria-label="Country">
+          <SelectTrigger className="w-full" aria-label="Country">
             <SelectValue placeholder="Select…" />
           </SelectTrigger>
           <SelectContent>
@@ -196,7 +196,7 @@ export default function EmployeeForm({
             value={formData.currency || undefined}
             onValueChange={(v) => setFormData((prev) => ({ ...prev, currency: v }))}
           >
-            <SelectTrigger aria-label="Currency">
+            <SelectTrigger className="w-full" aria-label="Currency">
               <SelectValue placeholder="Select…" />
             </SelectTrigger>
             <SelectContent>
@@ -213,7 +213,7 @@ export default function EmployeeForm({
       <div className="flex flex-col gap-1 text-sm">
         <span className="font-medium">Employment Type</span>
         <Select {...selectField("employment_type")}>
-          <SelectTrigger aria-label="Employment Type">
+          <SelectTrigger className="w-full" aria-label="Employment Type">
             <SelectValue placeholder="Select…" />
           </SelectTrigger>
           <SelectContent>
