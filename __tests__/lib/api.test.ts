@@ -27,6 +27,7 @@ import {
   deleteDepartment,
   getSalaryInsights,
   getSalaryHistory,
+  listCountries,
   _navigate,
 } from "@/lib/api";
 import type { EmployeeFormData, SalaryUpdateData } from "@/types";
@@ -349,6 +350,18 @@ describe("getSalaryHistory", () => {
       expect.anything()
     );
     expect(result).toEqual(mockHistory.salary_history);
+  });
+});
+
+describe("listCountries", () => {
+  it("fetches the list of countries with active employees", async () => {
+    mockFetch(200, { countries: [{ code: "GB", name: "United Kingdom" }, { code: "US", name: "United States" }] });
+    const result = await listCountries();
+    expect(fetch).toHaveBeenCalledWith(
+      `${BASE_URL}/api/v1/countries`,
+      expect.anything()
+    );
+    expect(result).toEqual([{ code: "GB", name: "United Kingdom" }, { code: "US", name: "United States" }]);
   });
 });
 
