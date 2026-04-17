@@ -8,6 +8,18 @@ jest.mock("@/lib/api", () => ({
   listJobTitles: jest.fn(),
   listDepartments: jest.fn(),
   updateEmployee: jest.fn(),
+  updateSalary: jest.fn(),
+}));
+
+jest.mock("@/lib/countries", () => ({
+  getCountryOptions: () => [
+    { code: "GB", name: "United Kingdom" },
+    { code: "IN", name: "India" },
+    { code: "US", name: "United States" },
+  ],
+  getCurrencyForCountry: (code: string) =>
+    ({ GB: "GBP", IN: "INR", US: "USD" } as Record<string, string>)[code] ?? "",
+  getCurrencyOptions: () => ["GBP", "INR", "USD"],
 }));
 
 jest.mock("next/navigation", () => ({

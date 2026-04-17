@@ -9,6 +9,17 @@ jest.mock("@/lib/api", () => ({
   createEmployee: jest.fn(),
 }));
 
+jest.mock("@/lib/countries", () => ({
+  getCountryOptions: () => [
+    { code: "GB", name: "United Kingdom" },
+    { code: "IN", name: "India" },
+    { code: "US", name: "United States" },
+  ],
+  getCurrencyForCountry: (code: string) =>
+    ({ GB: "GBP", IN: "INR", US: "USD" } as Record<string, string>)[code] ?? "",
+  getCurrencyOptions: () => ["GBP", "INR", "USD"],
+}));
+
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
@@ -76,9 +87,11 @@ describe("NewEmployeePage", () => {
     await userEvent.click(screen.getByRole("combobox", { name: /department/i }));
     await userEvent.click(await screen.findByRole("option", { name: "Engineering" }));
 
-    await userEvent.type(screen.getByLabelText(/country/i), "US");
+    await userEvent.click(screen.getByRole("combobox", { name: /country/i }));
+    await userEvent.click(await screen.findByRole("option", { name: "United States" }));
+
     await userEvent.type(screen.getByLabelText(/salary/i), "80000");
-    await userEvent.type(screen.getByLabelText(/currency/i), "USD");
+    // currency auto-populated to USD by country selection
 
     await userEvent.click(screen.getByRole("combobox", { name: /employment type/i }));
     await userEvent.click(await screen.findByRole("option", { name: /full time/i }));

@@ -3,6 +3,17 @@ import userEvent from "@testing-library/user-event";
 import EmployeeForm from "@/components/employees/EmployeeForm";
 import type { Department, Employee, JobTitle } from "@/types";
 
+jest.mock("@/lib/countries", () => ({
+  getCountryOptions: () => [
+    { code: "GB", name: "United Kingdom" },
+    { code: "IN", name: "India" },
+    { code: "US", name: "United States" },
+  ],
+  getCurrencyForCountry: (code: string) =>
+    ({ GB: "GBP", IN: "INR", US: "USD" } as Record<string, string>)[code] ?? "",
+  getCurrencyOptions: () => ["GBP", "INR", "USD"],
+}));
+
 const mockOnSubmit = jest.fn();
 
 const mockJobTitles: JobTitle[] = [
@@ -74,13 +85,45 @@ describe("EmployeeForm", () => {
     expect(screen.getByRole("option", { name: "Design" })).toBeInTheDocument();
   });
 
-  it("renders country, salary, currency, employment type, and hired on fields", () => {
+  it("renders country and currency as dropdowns, salary and hired on as inputs", () => {
     renderForm();
-    expect(screen.getByLabelText(/country/i)).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: /country/i })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: /currency/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/salary/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/currency/i)).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: /employment type/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/hired on/i)).toBeInTheDocument();
+  });
+
+  it("populates the country dropdown with all country options", async () => {
+    renderForm();
+    await userEvent.click(screen.getByRole("combobox", { name: /country/i }));
+    expect(await screen.findByRole("option", { name: "United Kingdom" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "United States" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "India" })).toBeInTheDocument();
+  });
+
+  it("populates the currency dropdown with all currency options", async () => {
+    renderForm();
+    await userEvent.click(screen.getByRole("combobox", { name: /currency/i }));
+    expect(await screen.findByRole("option", { name: "GBP" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "USD" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "INR" })).toBeInTheDocument();
+  });
+
+  it("auto-populates the currency when a country is selected", async () => {
+    renderForm();
+    await userEvent.click(screen.getByRole("combobox", { name: /country/i }));
+    await userEvent.click(await screen.findByRole("option", { name: "United Kingdom" }));
+    expect(screen.getByRole("combobox", { name: /currency/i })).toHaveTextContent("GBP");
+  });
+
+  it("allows changing the currency independently after auto-population", async () => {
+    renderForm();
+    await userEvent.click(screen.getByRole("combobox", { name: /country/i }));
+    await userEvent.click(await screen.findByRole("option", { name: "United Kingdom" }));
+    await userEvent.click(screen.getByRole("combobox", { name: /currency/i }));
+    await userEvent.click(await screen.findByRole("option", { name: "USD" }));
+    expect(screen.getByRole("combobox", { name: /currency/i })).toHaveTextContent("USD");
   });
 
   it("renders a submit button", () => {
@@ -93,7 +136,8 @@ describe("EmployeeForm", () => {
     expect(screen.getByLabelText(/first name/i)).toHaveValue("Jane");
     expect(screen.getByLabelText(/last name/i)).toHaveValue("Smith");
     expect(screen.getByLabelText(/email/i)).toHaveValue("jane@example.com");
-    expect(screen.getByLabelText(/country/i)).toHaveValue("US");
+    expect(screen.getByRole("combobox", { name: /country/i })).toHaveTextContent("United States");
+    expect(screen.getByRole("combobox", { name: /currency/i })).toHaveTextContent("USD");
   });
 
   it("calls onSubmit with form data when submitted", async () => {
@@ -110,9 +154,12 @@ describe("EmployeeForm", () => {
     await userEvent.click(screen.getByRole("combobox", { name: /department/i }));
     await userEvent.click(await screen.findByRole("option", { name: "Engineering" }));
 
-    await userEvent.type(screen.getByLabelText(/country/i), "US");
+    await userEvent.click(screen.getByRole("combobox", { name: /country/i }));
+    await userEvent.click(await screen.findByRole("option", { name: "United States" }));
+
     await userEvent.type(screen.getByLabelText(/salary/i), "80000");
-    await userEvent.type(screen.getByLabelText(/currency/i), "USD");
+
+    // currency is auto-populated to USD by the country selection; keep it
 
     await userEvent.click(screen.getByRole("combobox", { name: /employment type/i }));
     await userEvent.click(await screen.findByRole("option", { name: /full time/i }));
