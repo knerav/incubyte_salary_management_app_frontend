@@ -10,12 +10,14 @@ import {
   getEmployee,
   updateEmployee,
   updateSalary,
+  getSalaryHistory,
 } from "@/lib/api";
-import type { Department, EmployeeFormData, JobTitle, PaginationMeta } from "@/types";
+import type { Department, Employee, EmployeeFormData, JobTitle, PaginationMeta, SalaryHistoryEntry } from "@/types";
 import type { EmployeeFilters } from "@/lib/api";
 import EmployeeTable from "@/components/employees/EmployeeTable";
 import EmployeeFiltersComponent from "@/components/employees/EmployeeFilters";
 import EmployeeForm from "@/components/employees/EmployeeForm";
+import SalaryHistoryTable from "@/components/employees/SalaryHistoryTable";
 import Pagination from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,6 +57,8 @@ export default function EmployeesPage() {
   const [deleting, setDeleting] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addDialogView, setAddDialogView] = useState<AddDialogView>("form");
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [selectedHistory, setSelectedHistory] = useState<SalaryHistoryEntry[]>([]);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
   async function fetchEmployees(f: EmployeeFilters = filters) {
@@ -92,6 +96,12 @@ export default function EmployeesPage() {
         setAddDialogView("error");
       }
     }
+  }
+
+  async function handleSelectEmployee(id: number) {
+    const [emp, history] = await Promise.all([getEmployee(id), getSalaryHistory(id)]);
+    setSelectedEmployee(emp);
+    setSelectedHistory(history);
   }
 
   async function handleEditEmployee(id: number) {
@@ -145,6 +155,7 @@ export default function EmployeesPage() {
         employees={employees}
         meta={meta}
         onDelete={(id) => setPendingDeleteId(id)}
+        onSelect={handleSelectEmployee}
         onEdit={handleEditEmployee}
       />
 
@@ -157,6 +168,51 @@ export default function EmployeesPage() {
           fetchEmployees(updated);
         }}
       />
+
+      {/* Employee Profile Dialog */}
+      <Dialog
+        open={selectedEmployee != null}
+        onOpenChange={(open) => { if (!open) { setSelectedEmployee(null); setSelectedHistory([]); } }}
+      >
+        {selectedEmployee && (
+          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{selectedEmployee.first_name} {selectedEmployee.last_name}</DialogTitle>
+              <DialogDescription>{selectedEmployee.job_title} · {selectedEmployee.department}</DialogDescription>
+            </DialogHeader>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+              {[
+                ["Email", selectedEmployee.email],
+                ["Country", selectedEmployee.country],
+                ["Salary", `${selectedEmployee.salary} ${selectedEmployee.currency}`],
+                ["Employment Type", selectedEmployee.employment_type.replace("_", " ")],
+                ["Hired On", selectedEmployee.hired_on],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</dt>
+                  <dd className="mt-0.5">{value}</dd>
+                </div>
+              ))}
+            </dl>
+            <div className="border-t pt-4">
+              <h3 className="mb-3 text-sm font-semibold">Salary History</h3>
+              <SalaryHistoryTable history={selectedHistory} />
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSelectedEmployee(null);
+                  setSelectedHistory([]);
+                  setEditingEmployee(selectedEmployee);
+                }}
+              >
+                Edit
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        )}
+      </Dialog>
 
       {/* Edit Employee Dialog */}
       <Dialog open={editingEmployee != null} onOpenChange={(open) => { if (!open) setEditingEmployee(null); }}>
