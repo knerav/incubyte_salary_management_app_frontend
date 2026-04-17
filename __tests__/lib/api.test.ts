@@ -354,7 +354,7 @@ describe("token refresh on 401", () => {
     mockNavigate.mockRestore();
   });
 
-  it("calls the refresh endpoint with the current token when a request returns 401", async () => {
+  it("calls the refresh endpoint with credentials:include and no Authorization header when a request returns 401", async () => {
     mockFetchSequence(
       { status: 401, body: {} },
       { status: 200, body: {}, headers: { Authorization: "Bearer new.token" } },
@@ -363,14 +363,25 @@ describe("token refresh on 401", () => {
 
     await listEmployees({});
 
-    expect(fetch).toHaveBeenNthCalledWith(
-      2,
-      `${BASE_URL}/api/v1/users/refresh`,
-      expect.objectContaining({
-        method: "POST",
-        headers: expect.objectContaining({ Authorization: "Bearer mock.jwt.token" }),
-      })
+    const refreshCall = (fetch as jest.Mock).mock.calls[1];
+    expect(refreshCall[0]).toBe(`${BASE_URL}/api/v1/users/refresh`);
+    expect(refreshCall[1]).toMatchObject({ method: "POST", credentials: "include" });
+    expect((refreshCall[1].headers ?? {})).not.toHaveProperty("Authorization");
+  });
+
+  it("calls the refresh endpoint even when no JWT is stored (cookie is the credential)", async () => {
+    mockGetToken.mockReturnValue(null); // no JWT in localStorage
+    mockFetchSequence(
+      { status: 401, body: {} },
+      { status: 200, body: {}, headers: { Authorization: "Bearer new.token" } },
+      { status: 200, body: successfulEmployeeList },
     );
+
+    await listEmployees({});
+
+    const refreshCall = (fetch as jest.Mock).mock.calls[1];
+    expect(refreshCall[0]).toBe(`${BASE_URL}/api/v1/users/refresh`);
+    expect(refreshCall[1]).toMatchObject({ method: "POST", credentials: "include" });
   });
 
   it("stores the new token returned by the refresh endpoint", async () => {
@@ -388,8 +399,7 @@ describe("token refresh on 401", () => {
   it("retries the original request with the refreshed token and returns the result", async () => {
     mockGetToken
       .mockReturnValueOnce("Bearer mock.jwt.token") // initial request
-      .mockReturnValueOnce("Bearer mock.jwt.token") // refresh call
-      .mockReturnValue("Bearer new.token");          // retry request
+      .mockReturnValue("Bearer new.token");          // retry request (refresh no longer calls getToken)
 
     mockFetchSequence(
       { status: 401, body: {} },
