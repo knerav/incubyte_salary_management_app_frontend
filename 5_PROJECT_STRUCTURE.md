@@ -54,11 +54,11 @@ salary-management-frontend-app/
 │   │   ├── new/
 │   │   │   └── page.tsx              ← Standalone add employee form (route exists; add is also available as a modal from the list)
 │   │   └── [id]/
-│   │       ├── page.tsx              ← Employee profile: details + salary update form
+│   │       ├── page.tsx              ← Employee profile: details, salary history table, salary update form
 │   │       └── edit/
 │   │           └── page.tsx          ← Standalone edit employee form (route exists; edit is also available as a modal from the list)
 │   ├── insights/
-│   │   └── page.tsx                  ← Salary insights: filter bar, stats panel, history chart
+│   │   └── page.tsx                  ← Salary insights: filter bar, stats panel (aggregate view only)
 │   └── settings/
 │       └── page.tsx                  ← Job title and department CRUD in a single page
 │
@@ -70,10 +70,10 @@ salary-management-frontend-app/
 │   │   ├── EmployeeFilters.tsx       ← Labelled search + filter bar (q, dept, title, employment type)
 │   │   ├── EmployeeForm.tsx          ← Shared create/edit form with validation errors (ShadCN components)
 │   │   ├── SalaryUpdateForm.tsx      ← Dedicated salary update form (PATCH /salary endpoint)
+│   │   ├── SalaryHistoryTable.tsx    ← Chronological salary history table (GET /employees/:id/salary_history)
 │   │   └── DeleteEmployeeButton.tsx  ← Delete button with inline confirmation dialog
 │   ├── insights/
-│   │   ├── SalaryInsightsPanel.tsx   ← Min/max/avg stats + breakdown table
-│   │   └── SalaryHistoryChart.tsx    ← Line chart via Chart.js (client component)
+│   │   └── SalaryInsightsPanel.tsx   ← Min/max/avg stats + breakdown table
 │   ├── settings/
 │   │   ├── JobTitleManager.tsx       ← Inline list with add/edit/delete
 │   │   └── DepartmentManager.tsx     ← Inline list with add/edit/delete
@@ -106,10 +106,10 @@ salary-management-frontend-app/
 │   │   │   ├── EmployeeFilters.test.tsx
 │   │   │   ├── EmployeeForm.test.tsx
 │   │   │   ├── SalaryUpdateForm.test.tsx
+│   │   │   ├── SalaryHistoryTable.test.tsx
 │   │   │   └── DeleteEmployeeButton.test.tsx
 │   │   ├── insights/
-│   │   │   ├── SalaryInsightsPanel.test.tsx
-│   │   │   └── SalaryHistoryChart.test.tsx
+│   │   │   └── SalaryInsightsPanel.test.tsx
 │   │   └── settings/
 │   │       ├── JobTitleManager.test.tsx
 │   │       └── DepartmentManager.test.tsx

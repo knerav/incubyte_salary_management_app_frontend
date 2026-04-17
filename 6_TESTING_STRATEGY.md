@@ -82,7 +82,6 @@ Pages are tested with the same RTL setup as components, but the API module is mo
 **Mocking patterns:**
 
 - `next/navigation` is mocked to provide `useRouter` (`push`, `replace`) and `useParams` (returns the relevant `id`). This avoids Suspense complications that arise from using `use(params)` in a test environment.
-- `react-chartjs-2` is mocked with a lightweight `<div>` that forwards `aria-label` and `role` props so accessibility queries still work.
 
 ### 5. What I'm not testing
 

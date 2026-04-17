@@ -155,16 +155,15 @@ interface SalaryInsights {
   };
 }
 
-interface HistoricalSalaryPoint {
-  period: string;
-  avg_salary: string;
-  employee_count: number;
+interface SalaryHistoryEntry {
+  effective_from: string;
+  salary: string;
+  currency: string;
+  change: string | null; // percentage change from previous entry; null for the first entry
 }
 
-interface HistoricalSalaryInsights {
-  filters: Record<string, string>;
-  group_by: "month" | "quarter" | "year";
-  series: HistoricalSalaryPoint[];
+interface SalaryHistoryResponse {
+  salary_history: SalaryHistoryEntry[];
 }
 
 interface ApiValidationError {
@@ -314,6 +313,31 @@ DELETE /api/v1/employees/:id
 
 ---
 
+### Get salary history
+
+```
+GET /api/v1/employees/:id/salary_history
+```
+
+Returns the full salary history for an individual employee, ordered chronologically. Kept as a separate endpoint rather than a nested field on the employee object so that list and show views don't pay the cost of loading history on every request.
+
+**Response `200`:** `SalaryHistoryResponse`
+
+```json
+{
+  "salary_history": [
+    { "effective_from": "2022-03-14", "salary": "95000.00", "currency": "USD", "change": null },
+    { "effective_from": "2023-01-01", "salary": "105000.00", "currency": "USD", "change": "+10.53%" }
+  ]
+}
+```
+
+`change` is the percentage change from the preceding entry. The first entry is always `null`.
+
+**Response `404`:** `{ "error": "Not found" }`
+
+---
+
 ## Job Titles
 
 These endpoints are required by the Settings page (job title management) and by the employee form (populating the job title dropdown).
@@ -435,24 +459,3 @@ GET /api/v1/insights/salary
 | `job_title_id`  | integer | Filter by job title  |
 
 **Response `200`:** `SalaryInsights`
-
----
-
-### Historical salary insights
-
-```
-GET /api/v1/insights/salary/history
-```
-
-**Query parameters:**
-
-| Parameter       | Type    | Description                                           |
-| --------------- | ------- | ----------------------------------------------------- |
-| `country`       | string  | Filter by country                                     |
-| `department_id` | integer | Filter by department                                  |
-| `job_title_id`  | integer | Filter by job title                                   |
-| `from`          | date    | Start of date range, default 12 months ago            |
-| `to`            | date    | End of date range, default today                      |
-| `group_by`      | string  | Grouping period: `month` (default), `quarter`, `year` |
-
-**Response `200`:** `HistoricalSalaryInsights`
