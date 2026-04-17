@@ -9,6 +9,7 @@ import {
   createEmployee,
   getEmployee,
   updateEmployee,
+  updateSalary,
 } from "@/lib/api";
 import type { Department, Employee, EmployeeFormData, JobTitle, PaginationMeta } from "@/types";
 import type { EmployeeFilters } from "@/lib/api";
@@ -106,8 +107,11 @@ export default function EmployeesPage() {
 
   async function handleUpdateEmployee(data: EmployeeFormData) {
     if (!editingEmployee) return;
-    const { salary: _salary, currency: _currency, ...rest } = data;
+    const { salary, currency, ...rest } = data;
     await updateEmployee(editingEmployee.id, rest);
+    if (salary !== editingEmployee.salary || currency !== editingEmployee.currency) {
+      await updateSalary(editingEmployee.id, { salary, currency });
+    }
     setEditingEmployee(null);
     await fetchEmployees();
   }

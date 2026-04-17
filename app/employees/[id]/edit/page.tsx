@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { getEmployee, listJobTitles, listDepartments, updateEmployee } from "@/lib/api";
+import { getEmployee, listJobTitles, listDepartments, updateEmployee, updateSalary } from "@/lib/api";
 import type { Department, Employee, EmployeeFormData, JobTitle } from "@/types";
 import EmployeeForm from "@/components/employees/EmployeeForm";
 
@@ -27,8 +27,11 @@ export default function EditEmployeePage() {
   }, [numId]);
 
   async function handleSubmit(data: EmployeeFormData) {
-    const { salary: _salary, currency: _currency, ...rest } = data;
+    const { salary, currency, ...rest } = data;
     await updateEmployee(numId, rest);
+    if (employee && (salary !== employee.salary || currency !== employee.currency)) {
+      await updateSalary(numId, { salary, currency });
+    }
     router.push(`/employees/${numId}`);
   }
 

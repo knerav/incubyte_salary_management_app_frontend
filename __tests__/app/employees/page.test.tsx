@@ -178,7 +178,7 @@ describe("EmployeesPage", () => {
       });
       render(<EmployeesPage />);
       await screen.findByText("Jane Smith");
-      await userEvent.click(screen.getByRole("link", { name: /next/i }));
+      await userEvent.click(screen.getByRole("button", { name: /next/i }));
       await waitFor(() => {
         expect(mockListEmployees).toHaveBeenCalledWith(expect.objectContaining({ page: 2 }));
       });
