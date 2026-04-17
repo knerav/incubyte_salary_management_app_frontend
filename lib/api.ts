@@ -1,4 +1,4 @@
-import { getToken, setToken, clearToken } from "@/lib/auth";
+import { getToken, setToken, clearToken, getRefreshToken, setRefreshToken, clearRefreshToken } from "@/lib/auth";
 import type {
   Employee,
   EmployeeListResponse,
@@ -37,17 +37,19 @@ async function tryRefreshToken(): Promise<boolean> {
   _refreshPromise = (async () => {
     const response = await fetch(`${BASE_URL}/api/v1/users/refresh`, {
       method: "POST",
-      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ auth: { refresh_token: getRefreshToken() } }),
     });
 
     if (!response.ok) return false;
 
-    const newToken = response.headers.get("Authorization");
-    if (newToken) {
-      setToken(newToken);
-      return true;
-    }
-    return false;
+    const newJwt = response.headers.get("Authorization");
+    const data = await response.json();
+
+    if (newJwt) setToken(newJwt);
+    if (data?.auth?.refresh_token) setRefreshToken(data.auth.refresh_token);
+
+    return !!newJwt;
   })().finally(() => {
     _refreshPromise = null;
   });
@@ -57,11 +59,14 @@ async function tryRefreshToken(): Promise<boolean> {
 
 // Exported so tests can spy on it without touching window.location
 export const _navigate = {
-  to: (path: string) => { window.location.href = path; },
+  to: (path: string) => {
+    window.location.href = path;
+  },
 };
 
 function redirectToSignIn(): never {
   clearToken();
+  clearRefreshToken();
   _navigate.to("/sign-in");
   throw new AuthError("Unauthorized");
 }
@@ -69,7 +74,7 @@ function redirectToSignIn(): never {
 async function request<T>(
   path: string,
   options: RequestInit = {},
-  isRetry = false
+  isRetry = false,
 ): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`, {
     ...options,
@@ -104,10 +109,17 @@ async function request<T>(
   return body as T;
 }
 
-function toQueryString(params: Record<string, string | number | undefined>): string {
-  const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== "");
+function toQueryString(
+  params: Record<string, string | number | undefined>,
+): string {
+  const entries = Object.entries(params).filter(
+    ([, v]) => v !== undefined && v !== "",
+  );
   if (entries.length === 0) return "";
-  return "?" + entries.map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join("&");
+  return (
+    "?" +
+    entries.map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join("&")
+  );
 }
 
 // Auth
@@ -124,12 +136,18 @@ export async function signIn(email: string, password: string): Promise<void> {
   }
 
   const token = response.headers.get("Authorization");
+  const data = await response.json();
   if (token) setToken(token);
+  if (data?.auth?.refresh_token) setRefreshToken(data.auth.refresh_token);
 }
 
 export async function signOut(): Promise<void> {
-  await request("/api/v1/users/sign_out", { method: "DELETE" });
+  await request("/api/v1/users/sign_out", {
+    method: "DELETE",
+    body: JSON.stringify({ auth: { refresh_token: getRefreshToken() } }),
+  });
   clearToken();
+  clearRefreshToken();
 }
 
 // Employees
@@ -144,8 +162,12 @@ export interface EmployeeFilters {
   employment_type?: string;
 }
 
-export async function listEmployees(filters: EmployeeFilters): Promise<EmployeeListResponse> {
-  const qs = toQueryString(filters as Record<string, string | number | undefined>);
+export async function listEmployees(
+  filters: EmployeeFilters,
+): Promise<EmployeeListResponse> {
+  const qs = toQueryString(
+    filters as Record<string, string | number | undefined>,
+  );
   return request<EmployeeListResponse>(`/api/v1/employees${qs}`);
 }
 
@@ -153,7 +175,9 @@ export async function getEmployee(id: number): Promise<Employee> {
   return request<Employee>(`/api/v1/employees/${id}`);
 }
 
-export async function createEmployee(data: EmployeeFormData): Promise<Employee> {
+export async function createEmployee(
+  data: EmployeeFormData,
+): Promise<Employee> {
   return request<Employee>("/api/v1/employees", {
     method: "POST",
     body: JSON.stringify(data),
@@ -162,7 +186,7 @@ export async function createEmployee(data: EmployeeFormData): Promise<Employee> 
 
 export async function updateEmployee(
   id: number,
-  data: Partial<Omit<EmployeeFormData, "salary" | "currency">>
+  data: Partial<Omit<EmployeeFormData, "salary" | "currency">>,
 ): Promise<Employee> {
   return request<Employee>(`/api/v1/employees/${id}`, {
     method: "PATCH",
@@ -170,7 +194,10 @@ export async function updateEmployee(
   });
 }
 
-export async function updateSalary(id: number, data: SalaryUpdateData): Promise<Employee> {
+export async function updateSalary(
+  id: number,
+  data: SalaryUpdateData,
+): Promise<Employee> {
   return request<Employee>(`/api/v1/employees/${id}/salary`, {
     method: "PATCH",
     body: JSON.stringify(data),
@@ -181,8 +208,12 @@ export async function deleteEmployee(id: number): Promise<void> {
   return request<void>(`/api/v1/employees/${id}`, { method: "DELETE" });
 }
 
-export async function getSalaryHistory(id: number): Promise<SalaryHistoryEntry[]> {
-  const data = await request<SalaryHistoryResponse>(`/api/v1/employees/${id}/salary_history`);
+export async function getSalaryHistory(
+  id: number,
+): Promise<SalaryHistoryEntry[]> {
+  const data = await request<SalaryHistoryResponse>(
+    `/api/v1/employees/${id}/salary_history`,
+  );
   return data.salary_history;
 }
 
@@ -200,7 +231,10 @@ export async function createJobTitle(name: string): Promise<JobTitle> {
   });
 }
 
-export async function updateJobTitle(id: number, name: string): Promise<JobTitle> {
+export async function updateJobTitle(
+  id: number,
+  name: string,
+): Promise<JobTitle> {
   return request<JobTitle>(`/api/v1/job_titles/${id}`, {
     method: "PATCH",
     body: JSON.stringify({ name }),
@@ -214,7 +248,9 @@ export async function deleteJobTitle(id: number): Promise<void> {
 // Departments
 
 export async function listDepartments(): Promise<Department[]> {
-  const data = await request<{ departments: Department[] }>("/api/v1/departments");
+  const data = await request<{ departments: Department[] }>(
+    "/api/v1/departments",
+  );
   return data.departments;
 }
 
@@ -225,7 +261,10 @@ export async function createDepartment(name: string): Promise<Department> {
   });
 }
 
-export async function updateDepartment(id: number, name: string): Promise<Department> {
+export async function updateDepartment(
+  id: number,
+  name: string,
+): Promise<Department> {
   return request<Department>(`/api/v1/departments/${id}`, {
     method: "PATCH",
     body: JSON.stringify({ name }),
@@ -244,7 +283,11 @@ export interface InsightFilters {
   job_title_id?: number;
 }
 
-export async function getSalaryInsights(filters: InsightFilters): Promise<SalaryInsights> {
-  const qs = toQueryString(filters as Record<string, string | number | undefined>);
+export async function getSalaryInsights(
+  filters: InsightFilters,
+): Promise<SalaryInsights> {
+  const qs = toQueryString(
+    filters as Record<string, string | number | undefined>,
+  );
   return request<SalaryInsights>(`/api/v1/insights/salary${qs}`);
 }

@@ -84,3 +84,9 @@ export interface SalaryHistoryResponse {
 export interface ApiValidationError {
   errors: Record<string, string[]>;
 }
+
+export interface AuthResponse {
+  auth: {
+    refresh_token: string;
+  };
+}
