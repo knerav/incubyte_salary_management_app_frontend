@@ -41,9 +41,13 @@ The API client is tested by mocking the global `fetch`. Tests verify:
 
 - The correct URL and method are called for each endpoint.
 - The `Authorization` header is included when a token is present and absent when it is not.
-- A `401` response calls `clearToken` and throws an `AuthError`.
+- A `401` response triggers a refresh attempt (`POST /api/v1/users/refresh`), and the original request is retried with the new JWT on success.
+- A `401` on the refresh itself calls `clearToken` and redirects to `/sign-in`.
+- Concurrent `401` responses only trigger one refresh attempt, not multiple.
 - A `422` response surfaces the `errors` object.
 - The token is extracted from the `Authorization` response header on sign-in.
+
+Redirects are asserted by spying on the `_navigate.to` export rather than `window.location` (which jsdom does not allow reassignment of).
 
 These tests do not hit the network. They are fast and deterministic.
 
@@ -72,7 +76,8 @@ Pages are tested with the same RTL setup as components, but the API module is mo
 - The page renders the expected heading and primary UI after the initial data fetch resolves.
 - `useEffect` data-fetching calls are made with the correct arguments on mount.
 - Mutations (create, update, delete) trigger a refetch so that the UI stays in sync with the server.
-- Navigation after a mutation — for example, a successful employee creation redirects to `/employees`.
+- Modal open/close behaviour — for example, the add/edit employee dialogs on the employees list page.
+- Navigation after a mutation where applicable — for example, a successful salary update on the employee profile page.
 
 **Mocking patterns:**
 

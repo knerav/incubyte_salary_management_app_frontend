@@ -8,7 +8,11 @@ All endpoints are prefixed with `/api/v1`. The base URL is configured via the `N
 
 ## Authentication
 
-The backend uses JWT issued by `devise-jwt`. The token is returned in the `Authorization` **response header** on sign-in and must be sent as a Bearer token on every subsequent request:
+The backend uses a two-token scheme: a short-lived JWT for request authentication and a long-lived refresh token delivered via an `HttpOnly` cookie.
+
+### JWT
+
+The JWT is returned in the `Authorization` **response header** on sign-in and must be sent as a Bearer token on every subsequent request:
 
 ```
 Authorization: Bearer <token>
@@ -16,9 +20,23 @@ Authorization: Bearer <token>
 
 Tokens expire after 30 minutes. Requests without a valid token return `401 Unauthorized`.
 
+### Refresh token
+
+A refresh token is set as an `HttpOnly` cookie at sign-in:
+
+- **Name:** `refresh_token`
+- **HttpOnly:** `true` — JavaScript cannot read or exfiltrate it
+- **SameSite:** `Strict` — blocks CSRF from cross-origin requests
+- **Path:** `/api/v1/users/refresh` — the cookie is only sent to the refresh endpoint, not to any other API request
+- **Max-Age:** 7 days
+
+The backend stores a SHA-256 digest of the token — the raw value is never persisted.
+
 ### Token storage
 
 The frontend stores the JWT in `localStorage` under the key `auth_token`. A thin `lib/auth.ts` module wraps all reads and writes so storage can be swapped without touching call sites, and so tests can mock it cleanly.
+
+The refresh token is managed entirely by the browser via the `Set-Cookie` header — the frontend never reads or writes it directly.
 
 ### TypeScript types
 
@@ -28,6 +46,16 @@ getToken(): string | null
 setToken(token: string): void
 clearToken(): void
 ```
+
+### 401 handling and automatic token refresh
+
+When any API request returns `401`, the frontend:
+
+1. Attempts a token refresh by calling `POST /api/v1/users/refresh`.
+2. If the refresh succeeds, replaces the stored JWT with the new one and retries the original request.
+3. If the refresh also returns `401` (refresh token expired or invalid), clears the stored JWT and redirects to `/sign-in`.
+
+Concurrent `401` responses trigger only one refresh attempt. Subsequent failing requests are queued and replayed once the refresh resolves.
 
 ---
 
@@ -46,7 +74,7 @@ clearToken(): void
 ```
 
 **Unauthorized (`401`):**
-The frontend clears the stored token and redirects to `/sign-in`.
+The frontend attempts a token refresh (see above). If the refresh also fails, the stored token is cleared and the user is redirected to `/sign-in`.
 
 ---
 
@@ -160,9 +188,25 @@ POST /api/v1/users/sign_in
 { "user": { "email": "hr@company.com", "password": "Password1!" } }
 ```
 
-**Response `200`:** Empty body. JWT is in the `Authorization` response header.
+**Response `200`:** Empty body. JWT is in the `Authorization` response header. Refresh token is in the `Set-Cookie` response header (`HttpOnly`, `SameSite=Strict`, `Path=/api/v1/users/refresh`, 7-day `Max-Age`).
 
-**Frontend behaviour:** Extract the token from the `Authorization` header, call `setToken()`, then redirect to `/employees`.
+**Frontend behaviour:** Extract the token from the `Authorization` header, call `setToken()`, then redirect to `/employees`. The browser stores the refresh token cookie automatically.
+
+---
+
+### Refresh token
+
+```
+POST /api/v1/users/refresh
+```
+
+**Request:** No `Authorization` header required. The browser sends the `HttpOnly` refresh token cookie automatically (scoped to this path).
+
+**Response `200`:** Empty body. New JWT is in the `Authorization` response header. A new refresh token cookie is set (token rotation — the old record is deleted and a new one is created).
+
+**Response `401`:** Refresh token is invalid, expired, or absent.
+
+**Frontend behaviour:** Called automatically by `lib/api.ts` when a request returns `401`. On success, stores the new JWT via `setToken()` and replays the original request. On failure, calls `clearToken()` and redirects to `/sign-in`.
 
 ---
 
@@ -174,9 +218,9 @@ DELETE /api/v1/users/sign_out
 
 **Request:** Bearer token in `Authorization` header.
 
-**Response `200`:** `{ "message": "Signed out successfully." }`
+**Response `200`:** `{ "message": "Signed out successfully." }`. The `refresh_tokens` record is deleted and the refresh token cookie is cleared (`Max-Age=0`).
 
-**Frontend behaviour:** Call `clearToken()`, then redirect to `/sign-in`.
+**Frontend behaviour:** Call `clearToken()`, then redirect to `/sign-in`. The browser removes the refresh token cookie automatically.
 
 ---
 
@@ -274,8 +318,6 @@ DELETE /api/v1/employees/:id
 
 These endpoints are required by the Settings page (job title management) and by the employee form (populating the job title dropdown).
 
-> **Note:** These endpoints need to be added to the Rails API layer alongside the existing Hotwire `resources :job_titles` routes.
-
 ### List job titles
 
 ```
@@ -327,8 +369,6 @@ DELETE /api/v1/job_titles/:id
 ## Departments
 
 Parallel to Job Titles. Required by the Settings page and the employee form dropdown.
-
-> **Note:** These endpoints need to be added to the Rails API layer alongside the existing Hotwire `resources :departments` routes.
 
 ### List departments
 

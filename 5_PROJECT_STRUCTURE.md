@@ -21,15 +21,17 @@ incubyte-salary-management/
 │   │   └── api/
 │   │       └── v1/
 │   │           ├── base_controller.rb
-│   │           ├── job_titles_controller.rb      ← to be added
-│   │           ├── departments_controller.rb     ← to be added
+│   │           ├── job_titles_controller.rb
+│   │           ├── departments_controller.rb
 │   │           ├── employees_controller.rb
 │   │           ├── auth/
-│   │           │   ├── sessions_controller.rb
+│   │           │   ├── sessions_controller.rb    ← sign-in (issues JWT + refresh cookie), sign-out (clears both), refresh (rotates refresh token)
 │   │           │   └── registrations_controller.rb
 │   │           └── insights/
 │   │               └── salary_controller.rb
 │   ├── models/
+│   │   ├── refresh_token.rb                      ← stores SHA-256 digest, belongs_to :user
+│   │   └── ...
 │   ├── serializers/
 │   ├── services/
 │   └── views/
@@ -48,13 +50,13 @@ salary-management-frontend-app/
 │   ├── sign-in/
 │   │   └── page.tsx                  ← Sign-in form
 │   ├── employees/
-│   │   ├── page.tsx                  ← Employee list: filter bar, table, two-step delete
+│   │   ├── page.tsx                  ← Employee list: filter bar, table, pagination, add/edit/show modals, two-step delete
 │   │   ├── new/
-│   │   │   └── page.tsx              ← Add employee form
+│   │   │   └── page.tsx              ← Standalone add employee form (route exists; add is also available as a modal from the list)
 │   │   └── [id]/
 │   │       ├── page.tsx              ← Employee profile: details + salary update form
 │   │       └── edit/
-│   │           └── page.tsx          ← Edit employee form (general fields, no salary)
+│   │           └── page.tsx          ← Standalone edit employee form (route exists; edit is also available as a modal from the list)
 │   ├── insights/
 │   │   └── page.tsx                  ← Salary insights: filter bar, stats panel, history chart
 │   └── settings/
@@ -64,17 +66,19 @@ salary-management-frontend-app/
 │   ├── layout/
 │   │   └── Navbar.tsx                ← Nav links + sign-out button (client component)
 │   ├── employees/
-│   │   ├── EmployeeTable.tsx         ← Table with name links and delete buttons
-│   │   ├── EmployeeFilters.tsx       ← Search + filter bar (q, dept, title, employment type)
-│   │   ├── EmployeeForm.tsx          ← Shared create/edit form with validation errors
+│   │   ├── EmployeeTable.tsx         ← Table; accepts onSelect/onEdit callbacks (render buttons) or falls back to Links
+│   │   ├── EmployeeFilters.tsx       ← Labelled search + filter bar (q, dept, title, employment type)
+│   │   ├── EmployeeForm.tsx          ← Shared create/edit form with validation errors (ShadCN components)
 │   │   ├── SalaryUpdateForm.tsx      ← Dedicated salary update form (PATCH /salary endpoint)
 │   │   └── DeleteEmployeeButton.tsx  ← Delete button with inline confirmation dialog
 │   ├── insights/
 │   │   ├── SalaryInsightsPanel.tsx   ← Min/max/avg stats + breakdown table
 │   │   └── SalaryHistoryChart.tsx    ← Line chart via Chart.js (client component)
-│   └── settings/
-│       ├── JobTitleManager.tsx       ← Inline list with add/edit/delete
-│       └── DepartmentManager.tsx     ← Inline list with add/edit/delete
+│   ├── settings/
+│   │   ├── JobTitleManager.tsx       ← Inline list with add/edit/delete
+│   │   └── DepartmentManager.tsx     ← Inline list with add/edit/delete
+│   └── ui/
+│       └── pagination.tsx            ← Previous/Next + page number buttons; hidden when totalPages ≤ 1
 │
 ├── contexts/
 │   └── AuthContext.tsx               ← Provides { token, signIn, signOut } to the client tree
@@ -151,10 +155,12 @@ Next.js 16 delivers `params` as a `Promise<{ id: string }>`. Since all pages in 
 
 ### Centralised API client
 
-All fetch calls go through `lib/api.ts`. The base URL, `Authorization` header injection, and error normalisation (including `401` → sign-out) are handled once rather than repeated across components.
+All fetch calls go through `lib/api.ts`. The base URL, `Authorization` header injection, and error normalisation are handled once rather than repeated across components. On a `401` response, `api.ts` automatically attempts a token refresh via `POST /api/v1/users/refresh`. If the refresh succeeds, the original request is retried with the new JWT. If it fails, `clearToken()` is called and the user is redirected to `/sign-in`. Concurrent `401`s trigger only one refresh attempt — subsequent requests queue and replay after the refresh resolves.
+
+The `_navigate` export (`{ to: (path: string) => void }`) wraps `window.location.href` assignment so tests can spy on redirects without touching jsdom's non-configurable `window.location`.
 
 ### Middleware-based route protection
 
 `proxy.ts` checks for the presence of an `auth_token` cookie on every request to a protected route (anything except `/sign-in`). If absent, it redirects to `/sign-in`. Client-side, `AuthContext` also guards against stale renders if the token is missing from `localStorage`.
 
-> **Note on token storage:** The JWT is stored in `localStorage` and mirrored to a cookie solely so that `proxy.ts` can read it server-side for redirect protection. The cookie is not httpOnly — the security model here is appropriate for an internal HR tool on a trusted network, and trades simplicity for the marginally stronger XSS protection that httpOnly would provide.
+> **Note on token storage:** The JWT is stored in `localStorage` and mirrored to a non-`HttpOnly` cookie solely so that `proxy.ts` can read it server-side for redirect protection. The refresh token, however, is stored in a separate `HttpOnly` cookie (`SameSite=Strict`, scoped to `Path=/api/v1/users/refresh`) — JavaScript cannot read it, which eliminates the XSS exfiltration path for long-lived credentials.

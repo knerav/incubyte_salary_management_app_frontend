@@ -26,11 +26,32 @@ A side benefit: restoring a deleted employee is trivial — just nullify `delete
 
 ---
 
+## Two-token authentication: JWT + HttpOnly refresh token
+
+The JWT alone is sufficient for stateless authentication, but a 30-minute expiry forces the user to re-enter credentials frequently if nothing rotates it. A refresh token solves this without weakening security.
+
+The design uses two tokens with different lifetimes and different transport mechanisms:
+
+- **JWT** (30 min) — short-lived, sent by the client in the `Authorization` header on every request. If intercepted, the exposure window is at most 30 minutes.
+- **Refresh token** (7 days) — long-lived, stored server-side as a SHA-256 digest in the `refresh_tokens` table and transported exclusively via an `HttpOnly` cookie scoped to `Path=/api/v1/users/refresh`.
+
+The `HttpOnly` flag means JavaScript cannot read the cookie — an XSS attack that exfiltrates tokens from `localStorage` has no path to the refresh token. The `Path` scope means the cookie is only ever sent to the refresh endpoint, so it is invisible to all other API requests. The `SameSite=Strict` attribute blocks CSRF from cross-origin requests.
+
+We store a SHA-256 digest rather than the raw token. If the database is compromised, the digests cannot be reversed to valid tokens.
+
+Refresh tokens are rotated on every use: the old record is deleted and a new one is created. This gives each token a fresh 7-day window from the last refresh — a user who is active stays signed in indefinitely; a user who is inactive for 7 days must sign in again. It also means a stolen refresh token can only be used once before it is invalidated by the legitimate user's next refresh.
+
+The refresh endpoint does not require a valid JWT. That is intentional — its purpose is to issue a new JWT after the previous one has expired. Authentication for this endpoint is provided solely by the refresh token cookie.
+
+Sign-out deletes the `refresh_tokens` record and clears the cookie, invalidating both tokens in a single request.
+
+---
+
 ## Dedicated salary update endpoint
 
 Salary changes need to be written to `salary_histories` to support time-series insights. If salary were editable through the general `PATCH /employees/:id` endpoint, it would be possible to change a salary without recording the history — either by accident or oversight. To make that impossible, I exclude salary from the general update endpoint entirely. The dedicated `PATCH /employees/:id/salary` endpoint is the only write path to `salary_histories`, making history recording structural rather than procedural.
 
-This endpoint also requires an `effective_from` date, which allows backdated salary changes rather than always defaulting to today.
+The `effective_from` date defaults to today — it is derived automatically from `Date.today` when the salary history record is written, rather than being supplied by the caller. Backdated salary changes are not supported through the UI at this stage.
 
 ---
 
