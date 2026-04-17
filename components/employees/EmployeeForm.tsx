@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Department, Employee, EmployeeFormData, JobTitle } from "@/types";
+import { getCountryOptions, getCurrencyForCountry, getCurrencyOptions } from "@/lib/countries";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+const countryOptions = getCountryOptions();
+const currencyOptions = getCurrencyOptions();
 
 interface Props {
   jobTitles: JobTitle[];
@@ -40,7 +44,7 @@ export default function EmployeeForm({
     department_id: matchDepartment ? String(matchDepartment.id) : "",
     country: employee?.country ?? "",
     salary: employee?.salary ?? "",
-    currency: employee?.currency ?? "",
+    currency: employee?.currency ?? (employee?.country ? getCurrencyForCountry(employee.country) : ""),
     employment_type: employee?.employment_type ?? "",
     hired_on: employee?.hired_on ?? "",
   });
@@ -155,10 +159,30 @@ export default function EmployeeForm({
         </div>
       </div>
 
-      <label className="flex flex-col gap-1 text-sm">
+      <div className="flex flex-col gap-1 text-sm">
         <span className="font-medium">Country</span>
-        <Input aria-label="Country" type="text" {...textField("country")} />
-      </label>
+        <Select
+          value={formData.country || undefined}
+          onValueChange={(v) => {
+            setFormData((prev) => ({
+              ...prev,
+              country: v,
+              currency: getCurrencyForCountry(v) || prev.currency,
+            }));
+          }}
+        >
+          <SelectTrigger aria-label="Country">
+            <SelectValue placeholder="Select…" />
+          </SelectTrigger>
+          <SelectContent>
+            {countryOptions.map((c) => (
+              <SelectItem key={c.code} value={c.code}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="grid grid-cols-2 gap-4">
         <label className="flex flex-col gap-1 text-sm">
@@ -166,10 +190,24 @@ export default function EmployeeForm({
           <Input aria-label="Salary" type="text" {...textField("salary")} />
         </label>
 
-        <label className="flex flex-col gap-1 text-sm">
+        <div className="flex flex-col gap-1 text-sm">
           <span className="font-medium">Currency</span>
-          <Input aria-label="Currency" type="text" {...textField("currency")} />
-        </label>
+          <Select
+            value={formData.currency || undefined}
+            onValueChange={(v) => setFormData((prev) => ({ ...prev, currency: v }))}
+          >
+            <SelectTrigger aria-label="Currency">
+              <SelectValue placeholder="Select…" />
+            </SelectTrigger>
+            <SelectContent>
+              {currencyOptions.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="flex flex-col gap-1 text-sm">
