@@ -146,6 +146,8 @@ interface SalaryInsights {
     min_salary: string;
     max_salary: string;
     avg_salary: string;
+    currency_code: string; // e.g. "GBP", "USD" — derived from the country filter, defaults to "GBP"
+    currency_symbol: string; // e.g. "£", "$" — use directly to format salary values
     breakdowns: SalaryBreakdown[];
   };
 }
@@ -169,6 +171,11 @@ interface AuthResponse {
   auth: {
     refresh_token: string;
   };
+}
+
+interface Country {
+  code: string; // ISO 3166-1 alpha-2
+  name: string; // full display name
 }
 ```
 
@@ -443,6 +450,26 @@ DELETE /api/v1/departments/:id
 
 ---
 
+## Countries
+
+### List countries
+
+```
+GET /api/v1/countries
+```
+
+Returns only countries that have at least one active (non-deleted) employee. Use this to populate country filter dropdowns — not the full ISO list.
+
+**Response `200`:**
+
+```json
+{ "countries": [{ "code": "GB", "name": "United Kingdom" }, { "code": "US", "name": "United States" }] }
+```
+
+`code` is the ISO 3166-1 alpha-2 value to send as the `country` query parameter. `name` is the full display name, sorted alphabetically.
+
+---
+
 ## Insights
 
 ### Current salary insights
@@ -460,3 +487,5 @@ GET /api/v1/insights/salary
 | `job_title_id`  | integer | Filter by job title  |
 
 **Response `200`:** `SalaryInsights`
+
+`currency_code` and `currency_symbol` are derived from the `country` filter, defaulting to `GB`/`GBP`/`£` when no country is selected. The frontend uses these directly to format salary values without its own currency lookup.
