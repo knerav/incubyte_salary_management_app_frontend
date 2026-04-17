@@ -19,7 +19,7 @@ import {
   updateDepartment,
   deleteDepartment,
   getSalaryInsights,
-  getHistoricalSalaryInsights,
+  getSalaryHistory,
   _navigate,
 } from "@/lib/api";
 import type { EmployeeFormData, SalaryUpdateData } from "@/types";
@@ -298,6 +298,24 @@ describe("deleteDepartment", () => {
   });
 });
 
+describe("getSalaryHistory", () => {
+  it("fetches salary history for a given employee id", async () => {
+    const mockHistory = {
+      salary_history: [
+        { effective_from: "2022-03-14", salary: "95000.00", currency: "USD", change: null },
+        { effective_from: "2023-01-01", salary: "105000.00", currency: "USD", change: "+10.53%" },
+      ],
+    };
+    mockFetch(200, mockHistory);
+    const result = await getSalaryHistory(1);
+    expect(fetch).toHaveBeenCalledWith(
+      `${BASE_URL}/api/v1/employees/1/salary_history`,
+      expect.anything()
+    );
+    expect(result).toEqual(mockHistory.salary_history);
+  });
+});
+
 describe("getSalaryInsights", () => {
   it("fetches salary insights with filter parameters", async () => {
     const mockInsights = {
@@ -313,16 +331,6 @@ describe("getSalaryInsights", () => {
   });
 });
 
-describe("getHistoricalSalaryInsights", () => {
-  it("fetches historical salary insights with group_by parameter", async () => {
-    const mockHistory = { filters: {}, group_by: "month" as const, series: [] };
-    mockFetch(200, mockHistory);
-    await getHistoricalSalaryInsights({ group_by: "month" });
-    const url = (fetch as jest.Mock).mock.calls[0][0] as string;
-    expect(url).toContain("/api/v1/insights/salary/history");
-    expect(url).toContain("group_by=month");
-  });
-});
 
 function mockFetchSequence(
   ...responses: Array<{ status: number; body: unknown; headers?: Record<string, string> }>

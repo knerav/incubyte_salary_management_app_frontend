@@ -70,16 +70,15 @@ export interface SalaryInsights {
   };
 }
 
-export interface HistoricalSalaryPoint {
-  period: string;
-  avg_salary: string;
-  employee_count: number;
+export interface SalaryHistoryEntry {
+  effective_from: string;
+  salary: string;
+  currency: string;
+  change: string | null;
 }
 
-export interface HistoricalSalaryInsights {
-  filters: Record<string, string>;
-  group_by: "month" | "quarter" | "year";
-  series: HistoricalSalaryPoint[];
+export interface SalaryHistoryResponse {
+  salary_history: SalaryHistoryEntry[];
 }
 
 export interface ApiValidationError {

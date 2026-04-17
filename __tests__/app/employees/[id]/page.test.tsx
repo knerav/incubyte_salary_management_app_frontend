@@ -7,6 +7,7 @@ jest.mock("@/lib/api", () => ({
   getEmployee: jest.fn(),
   deleteEmployee: jest.fn(),
   updateSalary: jest.fn(),
+  getSalaryHistory: jest.fn(),
 }));
 
 jest.mock("next/navigation", () => ({
@@ -16,11 +17,18 @@ jest.mock("next/navigation", () => ({
 
 const mockPush = jest.fn();
 
-import { getEmployee, deleteEmployee, updateSalary } from "@/lib/api";
+import { getEmployee, deleteEmployee, updateSalary, getSalaryHistory } from "@/lib/api";
+import type { SalaryHistoryEntry } from "@/types";
 
 const mockGetEmployee = getEmployee as jest.MockedFunction<typeof getEmployee>;
 const mockDeleteEmployee = deleteEmployee as jest.MockedFunction<typeof deleteEmployee>;
 const mockUpdateSalary = updateSalary as jest.MockedFunction<typeof updateSalary>;
+const mockGetSalaryHistory = getSalaryHistory as jest.MockedFunction<typeof getSalaryHistory>;
+
+const mockHistory: SalaryHistoryEntry[] = [
+  { effective_from: "2022-01-01", salary: "90000.00", currency: "USD", change: null },
+  { effective_from: "2023-06-01", salary: "95000.00", currency: "USD", change: "+5.56%" },
+];
 
 const mockEmployee: Employee = {
   id: 1,
@@ -39,6 +47,7 @@ const mockEmployee: Employee = {
 beforeEach(() => {
   jest.clearAllMocks();
   mockGetEmployee.mockResolvedValue(mockEmployee);
+  mockGetSalaryHistory.mockResolvedValue(mockHistory);
 });
 
 describe("EmployeePage", () => {
@@ -56,8 +65,8 @@ describe("EmployeePage", () => {
 
   it("shows the employee's salary and currency", async () => {
     render(<EmployeePage />);
-    expect(await screen.findByText(/90000/)).toBeInTheDocument();
-    expect(screen.getByText(/USD/)).toBeInTheDocument();
+    expect(await screen.findAllByText(/90000/)).not.toHaveLength(0);
+    expect(screen.getAllByText(/USD/)).not.toHaveLength(0);
   });
 
   it("renders a link to edit the employee", async () => {
@@ -102,6 +111,33 @@ describe("EmployeePage", () => {
     await waitFor(() => {
       expect(mockDeleteEmployee).toHaveBeenCalledWith(1);
       expect(mockPush).toHaveBeenCalledWith("/employees");
+    });
+  });
+
+  describe("salary history", () => {
+    it("fetches salary history for the employee on mount", async () => {
+      render(<EmployeePage />);
+      await screen.findByRole("heading", { name: /jane smith/i });
+      await waitFor(() => {
+        expect(mockGetSalaryHistory).toHaveBeenCalledWith(1);
+      });
+    });
+
+    it("renders a salary history section heading", async () => {
+      render(<EmployeePage />);
+      expect(await screen.findByRole("heading", { name: /salary history/i })).toBeInTheDocument();
+    });
+
+    it("renders a row for each salary history entry", async () => {
+      render(<EmployeePage />);
+      // 2022-01-01 also appears as hired_on in the details section
+      expect(await screen.findAllByText("2022-01-01")).toHaveLength(2);
+      expect(screen.getByText("2023-06-01")).toBeInTheDocument();
+    });
+
+    it("renders the change percentage for entries after the first", async () => {
+      render(<EmployeePage />);
+      expect(await screen.findByText("+5.56%")).toBeInTheDocument();
     });
   });
 });
