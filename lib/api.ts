@@ -154,6 +154,24 @@ export async function signIn(email: string, password: string): Promise<void> {
   if (data?.auth?.refresh_token) setRefreshToken(data.auth.refresh_token);
 }
 
+export async function signUp(email: string, password: string, passwordConfirmation: string): Promise<void> {
+  const response = await fetch(`${BASE_URL}/api/v1/users/sign_up`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user: { email, password, password_confirmation: passwordConfirmation } }),
+  });
+
+  if (!response.ok) {
+    const body = await response.json();
+    throw new ValidationError(body.errors ?? { base: ["Registration failed"] });
+  }
+
+  const token = response.headers.get("Authorization");
+  const data = await response.json();
+  if (token) setToken(token);
+  if (data?.auth?.refresh_token) setRefreshToken(data.auth.refresh_token);
+}
+
 export async function signOut(): Promise<void> {
   await request("/api/v1/users/sign_out", {
     method: "DELETE",

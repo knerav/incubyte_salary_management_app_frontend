@@ -4,7 +4,7 @@ export function proxy(request: NextRequest) {
   const token = request.cookies.get("auth_token")?.value;
   const { pathname } = request.nextUrl;
 
-  if (!token && pathname !== "/sign-in") {
+  if (!token && pathname !== "/sign-in" && pathname !== "/sign-up") {
     const signInUrl = request.nextUrl.clone();
     signInUrl.pathname = "/sign-in";
     return NextResponse.redirect(signInUrl);
