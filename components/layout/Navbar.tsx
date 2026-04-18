@@ -45,7 +45,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  if (pathname === "/sign-in") return null;
+  if (pathname === "/sign-in" || pathname === "/sign-up") return null;
 
   async function handleSignOut() {
     await signOut();

@@ -14,7 +14,7 @@ jest.mock("next/navigation", () => ({
 
 function renderNavbar(token: string | null = "Bearer mock.token") {
   return render(
-    <AuthContext.Provider value={{ token, signIn: jest.fn(), signOut: mockSignOut }}>
+    <AuthContext.Provider value={{ token, signIn: jest.fn(), signUp: jest.fn(), signOut: mockSignOut }}>
       <Navbar />
     </AuthContext.Provider>
   );
@@ -107,9 +107,15 @@ describe("Navbar", () => {
     });
   });
 
-  describe("sign-in page", () => {
+  describe("auth pages", () => {
     it("does not render on the sign-in page", () => {
       mockPathname.mockReturnValue("/sign-in");
+      renderNavbar();
+      expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+    });
+
+    it("does not render on the sign-up page", () => {
+      mockPathname.mockReturnValue("/sign-up");
       renderNavbar();
       expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
     });
