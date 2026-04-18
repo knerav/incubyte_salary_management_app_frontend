@@ -1,3 +1,5 @@
+> Please note: This document is shared with the backend application and is an exact mirror. If you've read this document on the backend app you're up to date with it already.
+
 # Data Model
 
 From the event storm, I identified four structures that need persistence: the `User` aggregate, which owns authentication state for each HR Manager; the `JobTitle` aggregate, which is a managed reference table for canonical job titles; the `Employee` aggregate, which holds current employee state; and the `SalaryHistory` append-only log, which records salary changes over time to support historical insights.

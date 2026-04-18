@@ -26,24 +26,24 @@ A side benefit: restoring a deleted employee is trivial — just nullify `delete
 
 ---
 
-## Two-token authentication: JWT + refresh token in body
+## Two-token authentication: JWT + refresh token in response body
 
 The JWT alone is sufficient for stateless authentication, but a 30-minute expiry forces the user to re-enter credentials frequently if nothing rotates it. A refresh token solves this without weakening security.
 
 The design uses two tokens with different lifetimes:
 
 - **JWT** (30 min) — short-lived, sent by the client in the `Authorization` header on every request. If intercepted, the exposure window is at most 30 minutes.
-- **Refresh token** (7 days) — long-lived, stored server-side as a SHA-256 digest in the `refresh_tokens` table. Delivered in the response body at `data.auth.refresh_token` on sign-in and on every refresh. The frontend stores it in `localStorage`.
+- **Refresh token** (7 days) — long-lived, stored server-side as a SHA-256 digest in the `refresh_tokens` table, returned to the client in the response body under `auth.refresh_token`, and sent back by the client in the request body of `POST /api/v1/users/refresh`.
+
+In a production system the refresh token would be transported via an `HttpOnly` cookie — inaccessible to JavaScript and therefore immune to XSS token theft. For this assignment the body approach is used for simplicity: it is easier to inspect in DevTools and requires no cross-origin cookie configuration between the Next.js frontend and the Rails backend.
 
 We store a SHA-256 digest rather than the raw token. If the database is compromised, the digests cannot be reversed to valid tokens.
 
-Refresh tokens are rotated on every use: the old record is deleted and a new one is created. This gives each token a fresh 7-day window from the last refresh — a user who is active stays signed in indefinitely; a user who is inactive for 7 days must sign in again. It also means a stolen refresh token can only be used once before it is invalidated by the legitimate user's next refresh.
+Refresh tokens are rotated on every use: the old record is deleted and a new one is created. This gives each token a fresh 7-day window from the last refresh — a user who is active stays signed in indefinitely; a user who is inactive for 7 days must sign in again. A stolen refresh token can only be used once before it is invalidated by the legitimate user's next refresh.
 
-The refresh endpoint does not require a valid JWT — its purpose is to issue a new JWT after the previous one has expired. The refresh token in the request body is the sole credential.
+The refresh endpoint does not require a valid JWT. That is intentional — its purpose is to issue a new JWT after the previous one has expired.
 
-Sign-out accepts the refresh token in the request body to delete the `refresh_tokens` record server-side, invalidating the session immediately rather than waiting for natural expiry.
-
-**Trade-off:** Storing the refresh token in `localStorage` means a successful XSS attack could read it. An `HttpOnly` cookie is the stronger model, but it requires careful CORS configuration when the frontend and backend are on different origins. Since both tokens are in `localStorage`, the security properties are symmetric — the benefit of an in-memory JWT disappears when the refresh token is equally accessible. For a production deployment, moving to `HttpOnly` cookies (with a properly configured CORS setup or a same-origin reverse proxy) would be the recommended upgrade.
+Sign-out optionally accepts the refresh token in the request body to delete the record alongside revoking the JWT.
 
 ---
 
@@ -52,6 +52,14 @@ Sign-out accepts the refresh token in the request body to delete the `refresh_to
 Salary changes need to be written to `salary_histories` to support time-series insights. If salary were editable through the general `PATCH /employees/:id` endpoint, it would be possible to change a salary without recording the history — either by accident or oversight. To make that impossible, I exclude salary from the general update endpoint entirely. The dedicated `PATCH /employees/:id/salary` endpoint is the only write path to `salary_histories`, making history recording structural rather than procedural.
 
 The `effective_from` date defaults to today — it is derived automatically from `Date.today` when the salary history record is written, rather than being supplied by the caller. Backdated salary changes are not supported through the UI at this stage.
+
+---
+
+## Separate endpoint for individual salary history
+
+An employee's salary history is exposed at `GET /api/v1/employees/:id/salary_history` rather than embedded as a nested array in the show response. The employee list (`GET /api/v1/employees`) and show (`GET /api/v1/employees/:id`) endpoints are hit frequently — every page load, every profile view. Bundling salary history into the show response would load and serialise that data on every one of those requests, even when it is not needed.
+
+Keeping it on its own endpoint means salary history is only fetched when the user explicitly opens the history view, which is the less common path. At 10,000 employees, each with a growing number of salary history entries, this separation keeps the common read paths fast.
 
 ---
 
@@ -81,7 +89,7 @@ With 10,000 employees, fetching the full dataset and filtering in the browser is
 
 The employee record originally stored job title as free text. That creates a data quality problem: "Software Engineer", "software engineer", and "Softwre Engineer" are treated as three distinct dimensions in insight groupings, silently distorting averages and counts.
 
-To prevent this, job titles are managed by HR Managers as a separate reference table. Employees reference a `job_title_id` foreign key rather than entering text directly. The unique constraint on `job_titles.name` enforces a single canonical form per title. The UI always shows the full title name because it is stored directly in the `job_titles` table — no redundant string data is kept on the employee row itself.
+To prevent this, job titles are managed by HR Managers as a separate reference table. Employees reference a `job_title_id` foreign key rather than entering text directly. The unique constraint on `job_titles.name` enforces a single canonical form per title, and the `countries` gem resolves the display name at runtime so the UI always shows the full title without storing redundant string data on each employee row.
 
 This also prevents orphaned references — deleting a job title that still has employees assigned is blocked at the model layer, keeping the reference data consistent.
 

@@ -2,40 +2,15 @@
 
 Two repositories — a Rails monolith and a Next.js frontend — each in their own repo. This document covers both, but the Next.js section reflects the actual structure of this repository.
 
+> I would not ordinarily choose such a structure for an actual application. But, for the scope of this assignment I wanted to show you that I'm comfortable working with a traditional rails monolith (using modern Hotwire view standards), and also separate backend and frontend apps.
+
 ---
 
-## Rails App
-
-_(Unchanged from the original document — see the Rails repo for details.)_
+## Repositories
 
 ```
-incubyte-salary-management/
-├── app/
-│   ├── controllers/
-│   │   ├── application_controller.rb
-│   │   ├── pages_controller.rb
-│   │   ├── job_titles_controller.rb
-│   │   ├── departments_controller.rb
-│   │   ├── employees_controller.rb
-│   │   ├── insights_controller.rb
-│   │   └── api/
-│   │       └── v1/
-│   │           ├── base_controller.rb
-│   │           ├── job_titles_controller.rb
-│   │           ├── departments_controller.rb
-│   │           ├── employees_controller.rb
-│   │           ├── auth/
-│   │           │   ├── sessions_controller.rb    ← sign-in (issues JWT + refresh token in body), sign-out (invalidates refresh token), refresh (rotates refresh token)
-│   │           │   └── registrations_controller.rb
-│   │           └── insights/
-│   │               └── salary_controller.rb
-│   ├── models/
-│   │   ├── refresh_token.rb                      ← stores SHA-256 digest, belongs_to :user
-│   │   └── ...
-│   ├── serializers/
-│   ├── services/
-│   └── views/
-└── ...
+incubyte-salary-management/       ← Rails monolith (backend + Hotwire)
+incubyte-salary-management-ui/    ← Next.js frontend
 ```
 
 ---

@@ -1,8 +1,8 @@
 # Hello, team Incubyte! 👋
 
-This is a collection of documents that walk you through how I approached the salary management tool assignment. From my understanding of the requirements, all the way to how I implemented the code. Each document builds on the previous one, so I'd recommend reading them in the order listed below.
+I use Alacritty as my terminal of choice and tmux to run multiple sessions and split panes. I have Claude Code open in a split pane to the left of my screen, and to the right I have two panes split vertically, usually running the application server in one split and tests in the other.
 
-I use Alacritty as my terminal of choice and tmux to run multiple sessions and split panes. I have Claude Code open in a split pane to the left of my screen, and to the right I usually have the application server running.
+The primary goal with this application was to give you an insight into how I structure work. From translating business requirements to specs, my approach to testing, and structuring commits.
 
 ---
 

@@ -1,3 +1,7 @@
+> Please note: This document is shared with the backend application and is an exact mirror. If you've read this document on the backend app you're up to date with it already.
+
+# Event Storm
+
 In this document, I'd like share how I translate business requirements into the broad design of the system. I like following a mix of BDUF (Big design up front), and event storming to give an initial "shape" to the project. This approach has always helped me talk through business requirements and translate them to specs effectively, especially with a physical audience.
 
 To recap my understanding of the system at hand, it's is a salary management tool for an organisation with 10,000 employees. The sole user persona is an **HR Manager** who needs to manage employee records and derive salary insights across countries and job titles.
@@ -82,7 +86,7 @@ To recap my understanding of the system at hand, it's is a salary management too
 [UserPasswordResetRequested] ──► [UserPasswordReset]
 ```
 
-The authentication domain is a prerequisite — no job title, employee, or insight commands are reachable without a signed-in user. Job titles are a prerequisite for adding employees — an employee must be assigned to an existing job title. `SalaryHistoryRecorded` is fired automatically as a side effect of `EmployeeSalaryUpdated` (most likely through a callback).
+The authentication domain is a prerequisite — no job title, employee, or insight commands are reachable without a signed-in user. Job titles and departments are a prerequisite for adding employees — an employee must be assigned to an existing job title. `SalaryHistoryRecorded` is fired automatically as a side effect of `EmployeeSalaryUpdated` (most likely through a callback).
 
 ---
 

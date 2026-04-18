@@ -29,7 +29,7 @@ Every piece of behaviour is written test-first:
 
 ---
 
-## What I'm testing and in what order
+## Testing Order
 
 ### 1. `lib/auth.ts` — token storage utility
 
@@ -85,12 +85,6 @@ Pages are tested with the same RTL setup as components, but the API module is mo
 
 - `next/navigation` is mocked to provide `useRouter` (`push`, `replace`) and `useParams` (returns the relevant `id`). This avoids Suspense complications that arise from using `use(params)` in a test environment.
 - `@/lib/countries` is mocked in any test that renders `EmployeeForm` to avoid loading the full 250-country ISO dataset. The mock returns a small fixed list (`GB`, `IN`, `US`) and a matching currency map, keeping tests fast and deterministic.
-
-### 5. What I'm not testing
-
-- Next.js routing — the framework guarantees that `app/employees/page.tsx` is served at `/employees`.
-- Third-party library internals — `chart.js`, `react-chartjs-2`, fetch behaviour.
-- Anything already covered by TypeScript — if a type error would catch it, a test adds no value.
 
 ---
 

@@ -334,8 +334,18 @@ Returns the full salary history for an individual employee, ordered chronologica
 ```json
 {
   "salary_history": [
-    { "effective_from": "2022-03-14", "salary": "95000.00", "currency": "USD", "change": null },
-    { "effective_from": "2023-01-01", "salary": "105000.00", "currency": "USD", "change": "+10.53%" }
+    {
+      "effective_from": "2022-03-14",
+      "salary": "95000.00",
+      "currency": "USD",
+      "change": null
+    },
+    {
+      "effective_from": "2023-01-01",
+      "salary": "105000.00",
+      "currency": "USD",
+      "change": "+10.53%"
+    }
   ]
 }
 ```
@@ -463,7 +473,12 @@ Returns only countries that have at least one active (non-deleted) employee. Use
 **Response `200`:**
 
 ```json
-{ "countries": [{ "code": "GB", "name": "United Kingdom" }, { "code": "US", "name": "United States" }] }
+{
+  "countries": [
+    { "code": "GB", "name": "United Kingdom" },
+    { "code": "US", "name": "United States" }
+  ]
+}
 ```
 
 `code` is the ISO 3166-1 alpha-2 value to send as the `country` query parameter. `name` is the full display name, sorted alphabetically.
@@ -488,4 +503,4 @@ GET /api/v1/insights/salary
 
 **Response `200`:** `SalaryInsights`
 
-`currency_code` and `currency_symbol` are derived from the `country` filter, defaulting to `GB`/`GBP`/`£` when no country is selected. The frontend uses these directly to format salary values without its own currency lookup.
+`currency_code` and `currency_symbol` are derived from the `country` filter, defaulting to `IN`/`INR`/`₹` when no country is selected. The frontend uses these directly to format salary values without its own currency lookup.
