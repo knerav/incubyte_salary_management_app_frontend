@@ -10,6 +10,7 @@ jest.mock("@/lib/auth", () => ({
 import { getToken, setToken, clearToken, getRefreshToken, setRefreshToken, clearRefreshToken } from "@/lib/auth";
 import {
   signIn,
+  signUp,
   signOut,
   listEmployees,
   getEmployee,
@@ -108,6 +109,37 @@ describe("signIn", () => {
   it("throws when credentials are invalid", async () => {
     mockFetch(401, { error: "Invalid credentials" });
     await expect(signIn("bad@example.com", "wrong")).rejects.toThrow();
+  });
+});
+
+describe("signUp", () => {
+  it("sends registration details to the sign-up endpoint", async () => {
+    mockFetch(201, { auth: { refresh_token: "new.refresh.token" } }, { Authorization: "Bearer new.token" });
+    await signUp("hr@example.com", "Password1!", "Password1!");
+    expect(fetch).toHaveBeenCalledWith(
+      `${BASE_URL}/api/v1/users/sign_up`,
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ user: { email: "hr@example.com", password: "Password1!", password_confirmation: "Password1!" } }),
+      })
+    );
+  });
+
+  it("stores the JWT returned in the Authorization response header", async () => {
+    mockFetch(201, { auth: { refresh_token: "new.refresh.token" } }, { Authorization: "Bearer new.token" });
+    await signUp("hr@example.com", "Password1!", "Password1!");
+    expect(mockSetToken).toHaveBeenCalledWith("Bearer new.token");
+  });
+
+  it("stores the refresh token returned in the response body", async () => {
+    mockFetch(201, { auth: { refresh_token: "new.refresh.token" } }, { Authorization: "Bearer new.token" });
+    await signUp("hr@example.com", "Password1!", "Password1!");
+    expect(mockSetRefreshToken).toHaveBeenCalledWith("new.refresh.token");
+  });
+
+  it("throws when registration fails", async () => {
+    mockFetch(422, { errors: { email: ["has already been taken"] } });
+    await expect(signUp("taken@example.com", "Password1!", "Password1!")).rejects.toThrow();
   });
 });
 
