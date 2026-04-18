@@ -27,14 +27,15 @@ export default function SignInForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm">
+    <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <p role="alert" className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded">
+        <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-lg">
           {error}
         </p>
       )}
-      <div className="flex flex-col gap-1">
-        <label htmlFor="email" className="text-sm font-medium text-gray-700">
+
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium text-neutral-700 mb-1">
           Email
         </label>
         <input
@@ -43,11 +44,13 @@ export default function SignInForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+          autoComplete="email"
+          className="w-full rounded-lg border border-neutral-300 px-4 py-2.5 text-sm text-neutral-900 placeholder-neutral-400 focus:border-amber-600 focus:ring-2 focus:ring-amber-600 focus:outline-none"
         />
       </div>
-      <div className="flex flex-col gap-1">
-        <label htmlFor="password" className="text-sm font-medium text-gray-700">
+
+      <div>
+        <label htmlFor="password" className="block text-sm font-medium text-neutral-700 mb-1">
           Password
         </label>
         <input
@@ -56,13 +59,15 @@ export default function SignInForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+          autoComplete="current-password"
+          className="w-full rounded-lg border border-neutral-300 px-4 py-2.5 text-sm text-neutral-900 placeholder-neutral-400 focus:border-amber-600 focus:ring-2 focus:ring-amber-600 focus:outline-none"
         />
       </div>
+
       <button
         type="submit"
         disabled={pending}
-        className="bg-gray-900 text-white text-sm font-medium py-2 rounded hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full rounded-lg bg-amber-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors mt-2"
       >
         {pending ? "Signing in…" : "Sign in"}
       </button>
